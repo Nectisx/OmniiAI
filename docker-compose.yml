@@ -1,0 +1,96 @@
+version: '3.9'
+
+# Déploiement local complet OmniAI
+# Usage:
+#   1. Copiez .env.example en .env et remplissez les valeurs
+#   2. docker-compose up -d --build
+#   3. Frontend → http://localhost:3000
+
+services:
+
+  # ── Backend Node.js + Prisma ────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: omniai-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      PYTHON_SERVICE_URL: http://python-service:5000
+      PYTHON_SERVICE_SECRET: ${PYTHON_SERVICE_SECRET:-omniai-python-secret-2026}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - backend-uploads:/app/apps/backend/uploads
+      - backend-logs:/app/apps/backend/logs
+    depends_on:
+      - python-service
+    networks:
+      - omniai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Frontend Next.js ────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+    container_name: omniai-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api}
+    depends_on:
+      - backend
+    networks:
+      - omniai-network
+
+  # ── Python Flask (PDF/DOCX/STT) ─────────────────────────────
+  python-service:
+    build:
+      context: ./apps/python-service
+      dockerfile: Dockerfile
+    container_name: omniai-python
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: production
+      PYTHON_PORT: 5000
+      PYTHON_SERVICE_SECRET: ${PYTHON_SERVICE_SECRET:-omniai-python-secret-2026}
+      BACKEND_URL: http://backend:3001
+    networks:
+      - omniai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  backend-uploads:
+  backend-logs:
+
+networks:
+  omniai-network:
+    driver: bridge

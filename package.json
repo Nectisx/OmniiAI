@@ -1,0 +1,41 @@
+{
+  "name": "omniai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OmniAI — LLM Entreprise Hub",
+  "workspaces": [
+    "packages/*",
+    "apps/backend",
+    "apps/frontend"
+  ],
+  "scripts": {
+    "build:types": "npm run build --workspace=packages/types",
+    "build:backend": "npm run build --workspace=apps/backend",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "build": "npm run build:types && npm run build:backend && npm run build:frontend",
+    "dev": "concurrently --names \"BACK,FRONT\" --prefix-colors \"cyan,magenta\" --kill-others-on-fail \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "dev:python": "cd apps/python-service && python app.py",
+    "start:backend": "npm run start --workspace=apps/backend",
+    "start:frontend": "npm run start --workspace=apps/frontend",
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/backend",
+    "prisma:migrate:prod": "npm run prisma:migrate:prod --workspace=apps/backend",
+    "prisma:seed": "npm run prisma:seed --workspace=apps/backend",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/backend",
+    "prisma:studio": "npm run prisma:studio --workspace=apps/backend",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:logs": "docker-compose logs -f",
+    "clean": "rm -rf apps/backend/dist apps/frontend/.next packages/types/dist node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

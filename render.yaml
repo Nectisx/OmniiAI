@@ -1,0 +1,118 @@
+# ============================================================
+# render.yaml — Déploiement Render pour OmniAI (monorepo)
+# https://render.com/docs/render-yaml
+#
+# Workflow :
+#   1. Pousser ce dépôt sur GitHub
+#   2. Render Dashboard → New → Blueprint → connecter le repo
+#   3. Render lit ce fichier et crée les 3 services
+#   4. Configurer les variables marquées `sync: false` ci-dessous
+# ============================================================
+
+services:
+
+  # ── Backend Node.js + Express + Prisma ─────────────────────
+  - type: web
+    name: omniai-backend
+    runtime: node
+    plan: free
+    region: frankfurt
+    # IMPORTANT : on build depuis la racine pour avoir accès
+    # au workspace `packages/types`. Les commandes sont donc
+    # exécutées dans le repo root.
+    buildCommand: |
+      npm install --include=dev &&
+      npm run build:types &&
+      cd apps/backend &&
+      npx prisma generate &&
+      npm run build
+    startCommand: |
+      cd apps/backend &&
+      npx prisma migrate deploy &&
+      node dist/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        sync: false       # À configurer manuellement (TiDB Cloud)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: PYTHON_SERVICE_URL
+        sync: false       # URL du service Python (omniai-python.onrender.com)
+      - key: PYTHON_SERVICE_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false       # URL du frontend (omniai-frontend.onrender.com)
+      - key: GEMINI_RPM_LIMIT
+        value: 15
+      - key: GEMINI_RPD_LIMIT
+        value: 1500
+      - key: GEMINI_TPM_LIMIT
+        value: 1000000
+      - key: GROQ_RPM_LIMIT
+        value: 30
+      - key: GROQ_RPD_LIMIT
+        value: 1000
+      - key: GROQ_TPM_LIMIT
+        value: 500000
+      - key: GPT4O_RPM_LIMIT
+        value: 10
+      - key: GPT4O_RPD_LIMIT
+        value: 50
+      - key: GPT4O_TPM_LIMIT
+        value: 300000
+      - key: LOG_LEVEL
+        value: info
+
+  # ── Frontend Next.js 14 ─────────────────────────────────────
+  - type: web
+    name: omniai-frontend
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: |
+      npm install --include=dev &&
+      npm run build:types &&
+      cd apps/frontend &&
+      npm run build
+    startCommand: |
+      cd apps/frontend &&
+      npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false       # https://omniai-backend.onrender.com/api
+
+  # ── Python Microservice (extraction PDF/DOCX + STT) ────────
+  - type: web
+    name: omniai-python
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: apps/python-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 app:app
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_SERVICE_SECRET
+        sync: false       # Même valeur que dans le backend
+      - key: BACKEND_URL
+        sync: false       # https://omniai-backend.onrender.com

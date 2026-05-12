@@ -1,0 +1,180 @@
+// ============================================================
+// OmniAI — Schéma Prisma
+// Compatible MySQL / TiDB Cloud
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+// ── Enum ──────────────────────────────────────────────────────
+
+enum Language {
+  FR
+  EN
+}
+
+enum Theme {
+  DARK
+  LIGHT
+  SYSTEM
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+}
+
+enum LLMProvider {
+  gemini
+  groq
+  openai
+}
+
+// ── User ─────────────────────────────────────────────────────
+
+model User {
+  id               Int       @id @default(autoincrement())
+  prenom           String    @db.VarChar(50)
+  nom              String    @db.VarChar(50)
+  email            String    @unique @db.VarChar(100)
+  motDePasseHash   String    @db.VarChar(255) @map("mot_de_passe_hash")
+  avatar           String?   @db.VarChar(255)
+  company          String?   @db.VarChar(100)
+  langue           Language  @default(FR)
+  theme            Theme     @default(DARK)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  conversations    Conversation[]
+  apiKeys          ApiKey[]
+  usageMetrics     UsageMetric[]
+  notifications    NotificationSetting?
+
+  @@index([email])
+  @@map("users")
+}
+
+// ── Conversation ─────────────────────────────────────────────
+
+model Conversation {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("id_utilisateur")
+  titre       String    @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@index([userId])
+  @@index([updatedAt])
+  @@map("conversations")
+}
+
+// ── Message ──────────────────────────────────────────────────
+
+model Message {
+  id               Int           @id @default(autoincrement())
+  conversationId   Int           @map("id_conversation")
+  role             MessageRole
+  contenu          String        @db.Text
+  modeleUtilise    String?       @db.VarChar(50)   @map("modele_utilise")
+  fichierJoint     String?       @db.VarChar(255)  @map("fichier_joint")
+  tokensConsommes  Int           @default(0) @map("tokens_consommes")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  conversation     Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("messages")
+}
+
+// ── ApiKey ────────────────────────────────────────────────────
+
+model ApiKey {
+  id               Int         @id @default(autoincrement())
+  userId           Int         @map("id_utilisateur")
+  modele           String      @db.VarChar(50)
+  provider         LLMProvider
+  cleChiffree      String      @db.Text @map("cle_chiffree")    // Clé chiffrée AES
+  rpmLimit         Int         @map("rpm_limit")
+  rpmRestant       Int         @map("rpm_restant")
+  rpdLimit         Int         @map("rpd_limit")
+  rpdRestant       Int         @map("rpd_restant")
+  tpmLimit         Int         @map("tpm_limit")
+  tpmRestant       Int         @map("tpm_restant")
+  tokensConsommes  Int         @default(0) @map("tokens_consommes")
+  isActive         Boolean     @default(true) @map("is_active")
+  isMultimodal     Boolean     @default(false) @map("is_multimodal")
+  derniereMaj      DateTime    @default(now()) @map("derniere_maj")
+  createdAt        DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+// ── QuotaServeur — quotas des clés serveur (indépendant des users) ──
+
+model QuotaServeur {
+  id          Int         @id @default(autoincrement())
+  modele      String      @db.VarChar(50)
+  provider    LLMProvider
+  rpmRestant  Int         @map("rpm_restant")
+  rpdRestant  Int         @map("rpd_restant")
+  tpmRestant  Int         @map("tpm_restant")
+  derniereMaj DateTime    @default(now()) @map("derniere_maj")
+
+  @@unique([provider])
+  @@map("quotas_serveur")
+}
+
+// ── UsageMetric — métriques d'usage pour le dashboard ────────
+
+model UsageMetric {
+  id           Int         @id @default(autoincrement())
+  userId       Int         @map("id_utilisateur")
+  provider     LLMProvider
+  model        String      @db.VarChar(50)
+  tokens       Int         @default(0)
+  requestCount Int         @default(0) @map("request_count")
+  date         DateTime    @default(now())
+
+  // Relations
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([date])
+  @@index([userId, date])
+  @@map("usage_metrics")
+}
+
+// ── NotificationSetting ───────────────────────────────────────
+
+model NotificationSetting {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique @map("id_utilisateur")
+  quotaAlerts    Boolean  @default(true) @map("quota_alerts")
+  weeklyReport   Boolean  @default(true) @map("weekly_report")
+  emailAlerts    Boolean  @default(false) @map("email_alerts")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
