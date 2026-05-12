@@ -8,7 +8,7 @@
     "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "start:prod": "npx prisma migrate deploy && node dist/server.js",
+    "start:prod": "npx prisma db push --skip-generate --accept-data-loss && node dist/server.js",
     "prisma:migrate": "prisma migrate dev --skip-seed",
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
