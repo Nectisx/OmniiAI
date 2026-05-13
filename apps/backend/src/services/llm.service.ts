@@ -4,7 +4,6 @@
  * Gemini 2.0 Flash → Llama 3.3 70B (Groq) → GPT-4o (GitHub Models)
  */
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import Groq from 'groq-sdk';
 import OpenAI from 'openai';
 import { LLMModel, LLMProvider, MessageRole } from '@omniai/types';
 import { MODEL_CONFIGS, FALLBACK_CHAIN, ModelConfig } from '../config/llm.config';
@@ -50,8 +49,12 @@ function getGeminiClient(apiKey: string) {
   return new GoogleGenerativeAI(apiKey);
 }
 
-function getGroqClient(apiKey: string) {
-  return new Groq({ apiKey });
+function getMistralClient(apiKey: string) {
+  // Mistral expose une API compatible OpenAI
+  return new OpenAI({
+    apiKey,
+    baseURL: 'https://api.mistral.ai/v1',
+  });
 }
 
 function getOpenAIClient(apiKey: string) {
@@ -79,7 +82,7 @@ export class LLMService {
 
     const serverKey = {
       [LLMProvider.GEMINI]: process.env.GEMINI_API_KEY,
-      [LLMProvider.GROQ]: process.env.GROQ_API_KEY,
+      [LLMProvider.MISTRAL]: process.env.MISTRAL_API_KEY,
       [LLMProvider.OPENAI]: process.env.GITHUB_TOKEN,
     }[provider];
 
@@ -98,6 +101,12 @@ export class LLMService {
     apiKey: string,
     onChunk?: StreamCallback,
   ): Promise<{ content: string; tokens: number }> {
+    if (!apiKey || !apiKey.startsWith('AIza')) {
+      throw new AppError(
+        `Clé Gemini invalide (format attendu: AIzaSy...). Reçue: ${apiKey ? apiKey.slice(0, 6) + '...' : 'vide'}`,
+        401,
+      );
+    }
     const genAI = getGeminiClient(apiKey);
     const model = genAI.getGenerativeModel({
       model: LLMModel.GEMINI_2_FLASH,
@@ -167,14 +176,14 @@ export class LLMService {
   }
 
   /**
-   * Appel à Llama 3.3 70B via Groq
+   * Appel à Mistral Small via l'API Mistral (compatible OpenAI)
    */
-  private async callGroq(
+  private async callMistral(
     messages: LLMMessage[],
     apiKey: string,
     onChunk?: StreamCallback,
   ): Promise<{ content: string; tokens: number }> {
-    const groq = getGroqClient(apiKey);
+    const mistral = getMistralClient(apiKey);
 
     const formattedMessages = messages.map(m => ({
       role: m.role as 'user' | 'assistant' | 'system',
@@ -182,8 +191,8 @@ export class LLMService {
     }));
 
     if (onChunk) {
-      const stream = await groq.chat.completions.create({
-        model: LLMModel.LLAMA_3_3_70B,
+      const stream = await mistral.chat.completions.create({
+        model: LLMModel.MISTRAL_SMALL,
         messages: formattedMessages,
         max_tokens: 8192,
         stream: true,
@@ -195,16 +204,16 @@ export class LLMService {
       for await (const chunk of stream) {
         const text = chunk.choices[0]?.delta?.content || '';
         fullContent += text;
-        if (text) onChunk(text, false, { model: LLMModel.LLAMA_3_3_70B, provider: LLMProvider.GROQ });
-        if (chunk.x_groq?.usage) totalTokens = chunk.x_groq.usage.total_tokens;
+        if (text) onChunk(text, false, { model: LLMModel.MISTRAL_SMALL, provider: LLMProvider.MISTRAL });
+        if (chunk.usage) totalTokens = chunk.usage.total_tokens;
       }
 
-      onChunk('', true, { model: LLMModel.LLAMA_3_3_70B, provider: LLMProvider.GROQ });
+      onChunk('', true, { model: LLMModel.MISTRAL_SMALL, provider: LLMProvider.MISTRAL });
       const tokens = totalTokens || Math.ceil(fullContent.length / 4);
       return { content: fullContent, tokens };
     } else {
-      const response = await groq.chat.completions.create({
-        model: LLMModel.LLAMA_3_3_70B,
+      const response = await mistral.chat.completions.create({
+        model: LLMModel.MISTRAL_SMALL,
         messages: formattedMessages,
         max_tokens: 8192,
       });
@@ -276,8 +285,8 @@ export class LLMService {
     switch (config.provider) {
       case LLMProvider.GEMINI:
         return this.callGemini(messages, apiKey, onChunk);
-      case LLMProvider.GROQ:
-        return this.callGroq(messages, apiKey, onChunk);
+      case LLMProvider.MISTRAL:
+        return this.callMistral(messages, apiKey, onChunk);
       case LLMProvider.OPENAI:
         return this.callOpenAI(messages, apiKey, onChunk);
       default:
@@ -371,21 +380,28 @@ export class LLMService {
       } catch (error: unknown) {
         lastError = error as Error;
         const errMsg = (error as Error).message || '';
-        const errStatus = (error as any)?.status ?? (error as any)?.response?.status;
+        const errStatus = (error as any)?.status
+          ?? (error as any)?.statusCode
+          ?? (error as any)?.response?.status;
+        const errLower = errMsg.toLowerCase();
         logger.warn(`Erreur ${modelId}: ${errMsg}`);
 
         // Erreur quota (429) → fallback
         const isQuotaError = errStatus === 429
           || errMsg.includes('429')
-          || errMsg.toLowerCase().includes('quota')
-          || errMsg.toLowerCase().includes('rate limit');
+          || errLower.includes('quota')
+          || errLower.includes('rate limit')
+          || errLower.includes('rate_limit')
+          || errLower.includes('resource has been exhausted');
 
         // Erreur clé invalide (401/403)
         const isAuthError = errStatus === 401 || errStatus === 403
-          || errMsg.toLowerCase().includes('unauthorized')
-          || errMsg.toLowerCase().includes('invalid api key')
-          || errMsg.toLowerCase().includes('api key not valid')
-          || errMsg.toLowerCase().includes('forbidden');
+          || errLower.includes('unauthorized')
+          || errLower.includes('invalid api key')
+          || errLower.includes('api key not valid')
+          || errLower.includes('api_key_invalid')
+          || errLower.includes('permission_denied')
+          || errLower.includes('forbidden');
 
         if (isQuotaError && dynamicRouting) {
           await quotaService.markExhausted(config.provider);

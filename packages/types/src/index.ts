@@ -23,13 +23,13 @@ export enum MessageRole {
 
 export enum LLMProvider {
   GEMINI = 'gemini',
-  GROQ = 'groq',
+  MISTRAL = 'mistral',
   OPENAI = 'openai',
 }
 
 export enum LLMModel {
   GEMINI_2_FLASH = 'gemini-2.0-flash',
-  LLAMA_3_3_70B = 'llama-3.3-70b-versatile',
+  MISTRAL_SMALL = 'mistral-small-latest',
   GPT_4O = 'gpt-4o',
 }
 
@@ -184,7 +184,7 @@ export interface DashboardKPIs {
 export interface DailyUsage {
   date: string;
   gemini: number;
-  groq: number;
+  mistral: number;
   openai: number;
   total: number;
 }
@@ -249,7 +249,7 @@ export interface AppSettings {
   notifications: NotificationSettings;
   apiKeys: {
     gemini: boolean;    // Indique si une clé est configurée (pas la clé elle-même)
-    groq: boolean;
+    mistral: boolean;
     openai: boolean;
   };
 }

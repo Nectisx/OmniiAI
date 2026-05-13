@@ -48,7 +48,7 @@ services:
         value: 7d
       - key: GEMINI_API_KEY
         sync: false
-      - key: GROQ_API_KEY
+      - key: MISTRAL_API_KEY
         sync: false
       - key: GITHUB_TOKEN
         sync: false
@@ -64,11 +64,11 @@ services:
         value: 1500
       - key: GEMINI_TPM_LIMIT
         value: 1000000
-      - key: GROQ_RPM_LIMIT
-        value: 30
-      - key: GROQ_RPD_LIMIT
+      - key: MISTRAL_RPM_LIMIT
+        value: 60
+      - key: MISTRAL_RPD_LIMIT
         value: 1000
-      - key: GROQ_TPM_LIMIT
+      - key: MISTRAL_TPM_LIMIT
         value: 500000
       - key: GPT4O_RPM_LIMIT
         value: 10

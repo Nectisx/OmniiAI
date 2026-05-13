@@ -14,7 +14,7 @@ import { useT } from '@/lib/i18n';
 
 const PROVIDER_COLORS: Record<string, string> = {
   [LLMProvider.GEMINI]: '#1a73e8',
-  [LLMProvider.GROQ]: '#7B4FD4',
+  [LLMProvider.MISTRAL]: '#ff7000',
   [LLMProvider.OPENAI]: '#10a37f',
 };
 
@@ -69,7 +69,7 @@ export default function DashboardPage() {
   const chartData = data?.dailyUsage?.map(d => ({
     name: getDayLabel(d.date),
     Gemini: d.gemini,
-    Llama: d.groq,
+    Mistral: d.mistral,
     'GPT-4o': d.openai,
   })) || [];
 
@@ -174,12 +174,12 @@ export default function DashboardPage() {
           <div className="flex items-center gap-4">
             {[
               { label: 'Gemini', color: '#1a73e8' },
-              { label: 'Llama', color: '#7B4FD4' },
+              { label: 'Mistral', color: '#ff7000' },
               { label: 'GPT-4o', color: '#10a37f' },
-            ].map(l => (
-              <div key={l.label} className="flex items-center gap-1.5 text-[11px] text-[var(--text2)]">
-                <div className="w-2 h-2 rounded-full" style={{ background: l.color }} />
-                {l.label}
+            ].map(legend => (
+              <div key={legend.label} className="flex items-center gap-1.5 text-[11px] text-[var(--text2)]">
+                <div className="w-2 h-2 rounded-full" style={{ background: legend.color }} />
+                {legend.label}
               </div>
             ))}
           </div>
@@ -191,7 +191,7 @@ export default function DashboardPage() {
             <YAxis tick={{ fill: 'var(--text3)', fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
             <Bar dataKey="Gemini" fill="#1a73e8" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="Llama" fill="#7B4FD4" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="Mistral" fill="#ff7000" radius={[3, 3, 0, 0]} />
             <Bar dataKey="GPT-4o" fill="#10a37f" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

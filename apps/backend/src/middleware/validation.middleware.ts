@@ -67,7 +67,7 @@ export const refreshTokenSchema = z.object({
 export const sendMessageSchema = z.object({
   conversationId: z.number().int().positive().optional(),
   contenu: z.string().min(1, 'Message vide').max(50_000, 'Message trop long (50k chars max)').trim(),
-  modelId: z.enum(['gemini-2.0-flash', 'llama-3.3-70b-versatile', 'gpt-4o']).optional(),
+  modelId: z.enum(['gemini-2.0-flash', 'mistral-small-latest', 'gpt-4o']).optional(),
   dynamicRouting: z.boolean().optional().default(true),
   fileBase64: z.string().optional(),
   fileName: z.string().max(255).optional(),
@@ -75,7 +75,7 @@ export const sendMessageSchema = z.object({
 });
 
 export const upsertApiKeySchema = z.object({
-  provider: z.enum(['gemini', 'groq', 'openai']),
+  provider: z.enum(['gemini', 'mistral', 'openai']),
   cle: z.string().min(10, 'Clé trop courte').max(500),
 });
 
@@ -85,7 +85,8 @@ export const updateProfileSchema = z.object({
   company: z.string().max(100).trim().optional(),
   langue: z.enum(['FR', 'EN']).optional(),
   theme: z.enum(['DARK', 'LIGHT', 'SYSTEM']).optional(),
-  avatar: z.string().url().optional().or(z.literal('')),
+  // Accepte : URL, emoji court, ou chaîne vide pour reset
+  avatar: z.string().max(255).optional().or(z.literal('')),
 });
 
 export const paginationSchema = z.object({

@@ -39,7 +39,7 @@ git add .
 
 echo.
 echo === Commit ===
-git commit -m "fix: db push instead of migrate deploy, simplify next config, lighten python deps"
+git commit -m "feat: Mistral replaces Groq + avatar modal + Gemini key validation"
 if errorlevel 1 (
   echo [ERREUR] Le commit a echoue
   pause

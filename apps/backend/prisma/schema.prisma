@@ -35,7 +35,7 @@ enum MessageRole {
 
 enum LLMProvider {
   gemini
-  groq
+  mistral
   openai
 }
 

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/useToast';
 import { LLMProvider, Language, Theme } from '@omniai/types';
 import { cn } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
+import { AvatarModal } from '@/components/modals/AvatarModal';
 
 const SECTION_ICONS = [User, Key, Palette, Bell];
 const SECTION_KEYS = ['profile', 'apiKeys', 'appearance', 'notifications'] as const;
@@ -42,8 +43,11 @@ export default function SettingsPage() {
   });
 
   // API keys state
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({ gemini: '', groq: '', openai: '' });
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({ gemini: '', mistral: '', openai: '' });
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+
+  // Avatar modal state
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
   // Notifications state
   const [notifs, setNotifs] = useState({
@@ -104,9 +108,9 @@ export default function SettingsPage() {
   };
 
   const API_KEY_CONFIGS = [
-    { provider: LLMProvider.GEMINI, label: 'Gemini (Google AI Studio)', placeholder: 'AIzaSy...', hasKey: settings?.apiKeys?.gemini, prefix: 'AIzaSy' },
-    { provider: LLMProvider.GROQ, label: 'Groq (Llama 3.3 70B)', placeholder: 'gsk_...', hasKey: settings?.apiKeys?.groq, prefix: 'gsk_' },
-    { provider: LLMProvider.OPENAI, label: 'OpenAI / GitHub Models (GPT-4o)', placeholder: 'sk-... ou ghp_...', hasKey: settings?.apiKeys?.openai, prefix: '' },
+    { provider: LLMProvider.GEMINI, label: 'Gemini (Google AI Studio)', placeholder: 'AIzaSy...', hasKey: settings?.apiKeys?.gemini, prefix: 'AIzaSy', help: 'https://aistudio.google.com/apikey' },
+    { provider: LLMProvider.MISTRAL, label: 'Mistral AI', placeholder: 'xxxxxxxxxxxxxxxx', hasKey: settings?.apiKeys?.mistral, prefix: '', help: 'https://console.mistral.ai/api-keys' },
+    { provider: LLMProvider.OPENAI, label: 'OpenAI / GitHub Models (GPT-4o)', placeholder: 'sk-... ou ghp_...', hasKey: settings?.apiKeys?.openai, prefix: '', help: 'https://github.com/settings/tokens' },
   ];
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
@@ -169,13 +173,27 @@ export default function SettingsPage() {
 
               {/* Avatar */}
               <div className="flex items-center gap-4 mb-6 p-4 bg-[var(--bg3)] border border-[var(--border)] rounded-xl">
-                <div className="w-14 h-14 rounded-full bg-gradient-omni flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
-                  {user?.prenom?.[0]}{user?.nom?.[0]}
+                <div className="w-14 h-14 rounded-full bg-gradient-omni flex items-center justify-center text-white font-bold text-xl flex-shrink-0 overflow-hidden">
+                  {user?.avatar ? (
+                    [...user.avatar].length <= 4 && !user.avatar.startsWith('http') ? (
+                      <span className="text-3xl">{user.avatar}</span>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+                    )
+                  ) : (
+                    <>{user?.prenom?.[0]}{user?.nom?.[0]}</>
+                  )}
                 </div>
                 <div>
                   <p className="text-[14px] font-medium text-[var(--text)]">{user?.prenom} {user?.nom}</p>
                   <p className="text-[12px] text-[var(--text3)]">{user?.email}</p>
-                  <button className="text-[11px] text-[var(--cyan)] mt-1 hover:text-[var(--cyan2)]">{t('settings.changeAvatar')}</button>
+                  <button
+                    onClick={() => setAvatarOpen(true)}
+                    className="text-[11px] text-[var(--cyan)] mt-1 hover:text-[var(--cyan2)]"
+                  >
+                    {t('settings.changeAvatar')}
+                  </button>
                 </div>
               </div>
 
@@ -385,6 +403,17 @@ export default function SettingsPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Avatar Modal */}
+      <AvatarModal
+        isOpen={avatarOpen}
+        onClose={() => setAvatarOpen(false)}
+        currentAvatar={user?.avatar}
+        initials={`${user?.prenom?.[0] ?? ''}${user?.nom?.[0] ?? ''}`.toUpperCase()}
+        onSave={(avatar) => {
+          updateProfileMutation.mutate({ avatar: avatar ?? '' });
+        }}
+      />
     </div>
   );
 }

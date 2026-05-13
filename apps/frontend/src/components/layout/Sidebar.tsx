@@ -191,8 +191,17 @@ export function Sidebar() {
           {/* User */}
           <div className="border-t border-[var(--border)] p-3">
             <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[var(--bg3)] cursor-pointer group">
-              <div className="w-7 h-7 rounded-full bg-gradient-omni flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
-                {initials}
+              <div className="w-7 h-7 rounded-full bg-gradient-omni flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 overflow-hidden">
+                {user?.avatar ? (
+                  [...user.avatar].length <= 4 && !user.avatar.startsWith('http') ? (
+                    <span className="text-base">{user.avatar}</span>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.avatar} alt="avatar" className="w-full h-full object-cover" />
+                  )
+                ) : (
+                  initials
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-medium text-[var(--text)] truncate">

@@ -84,6 +84,7 @@ export const useChatStore = create<ChatState>((set) => ({
   isLoadingMessages: false,
 
   selectedModel: LLMModel.GEMINI_2_FLASH,
+  // (fallback chain: Gemini → Mistral → GPT-4o)
   dynamicRouting: true,
 
   streaming: {

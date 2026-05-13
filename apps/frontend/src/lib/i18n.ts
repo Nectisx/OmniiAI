@@ -167,6 +167,10 @@ const dict = {
   'settings.light': { fr: 'Clair', en: 'Light' },
   'settings.system': { fr: 'Système', en: 'System' },
   'settings.changeAvatar': { fr: "Changer l'avatar", en: 'Change avatar' },
+  'settings.avatarHelp': { fr: 'Choisissez un emoji ou collez une URL d\'image', en: 'Choose an emoji or paste an image URL' },
+  'settings.avatarEmoji': { fr: 'Emoji', en: 'Emoji' },
+  'settings.avatarUrl': { fr: "URL d'image", en: 'Image URL' },
+  'settings.avatarReset': { fr: 'Réinitialiser', en: 'Reset' },
   'settings.quotaAlerts': { fr: 'Alertes de quota (80%)', en: 'Quota alerts (80%)' },
   'settings.quotaAlertsDesc': {
     fr: "Notification quand un modèle atteint 80% de son quota journalier",

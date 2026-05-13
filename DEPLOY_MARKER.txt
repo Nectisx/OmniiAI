@@ -1,11 +1,15 @@
-Deploy marker v5 — i18n complet FR/EN, clés API perso améliorées
-Date: 2026-05-13
+Deploy marker v6 — Mistral à la place de Groq/Llama + avatar fonctionnel + meilleur Gemini
 
 Changements :
-- Toutes les pages traduites : Login, Register, Chat, Dashboard, Settings, Sidebar, Modal modèle, Session Info, Chat Message, Welcome Screen
-- Bouton de déconnexion traduit
-- Notification de fallback traduite
-- Badge "Clé perso" affiché dans le SessionInfoPanel et le ModelSelectorModal quand l'utilisateur utilise sa propre clé
-- Validation format de clé dans la page Settings (avertissement si préfixe inattendu)
-- Erreurs 401/403 (clé invalide) : message explicite à l'utilisateur (ne pas bypass via fallback)
-- Refetch des quotas après save/delete de clé pour MAJ instantanée de l'UI
+- Groq/Llama 3.3 70B remplacé par Mistral Small (mistral-small-latest)
+- Variable d'env GROQ_API_KEY → MISTRAL_API_KEY
+- Schema Prisma enum: groq → mistral
+- Tous les types/fichiers backend et frontend mis à jour
+- Couleurs Mistral: orange (#ff7000)
+- Dashboard et chart adaptés
+- Avatar : nouveau modal avec 12 emojis preset + URL personnalisée
+- Avatar affiché dans la Sidebar et la page Profil
+- Gemini: validation du format de clé en amont (doit commencer par AIza)
+- Meilleure détection d'erreurs Gemini (api_key_invalid, permission_denied, etc.)
+- packages/types: LLMProvider.GROQ → LLMProvider.MISTRAL, LLMModel.LLAMA_3_3_70B → LLMModel.MISTRAL_SMALL
+- groq-sdk retiré des deps (utilise OpenAI SDK avec baseURL Mistral)

@@ -24,9 +24,9 @@ async function main() {
       tpmRestant: 1000000,
     },
     {
-      modele: 'llama-3.3-70b-versatile',
-      provider: LLMProvider.groq,
-      rpmRestant: 30,
+      modele: 'mistral-small-latest',
+      provider: LLMProvider.mistral,
+      rpmRestant: 60,
       rpdRestant: 1000,
       tpmRestant: 500000,
     },

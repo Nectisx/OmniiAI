@@ -86,7 +86,7 @@ export class DashboardService {
 
       const byProvider = {
         [LLMProvider.GEMINI]: 0,
-        [LLMProvider.GROQ]: 0,
+        [LLMProvider.MISTRAL]: 0,
         [LLMProvider.OPENAI]: 0,
       };
 
@@ -97,9 +97,9 @@ export class DashboardService {
       result.push({
         date: date.toISOString().split('T')[0],
         gemini: byProvider[LLMProvider.GEMINI],
-        groq: byProvider[LLMProvider.GROQ],
+        mistral: byProvider[LLMProvider.MISTRAL],
         openai: byProvider[LLMProvider.OPENAI],
-        total: byProvider[LLMProvider.GEMINI] + byProvider[LLMProvider.GROQ] + byProvider[LLMProvider.OPENAI],
+        total: byProvider[LLMProvider.GEMINI] + byProvider[LLMProvider.MISTRAL] + byProvider[LLMProvider.OPENAI],
       });
     }
 

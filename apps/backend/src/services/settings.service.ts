@@ -123,7 +123,7 @@ export class SettingsService {
       },
       apiKeys: {
         gemini: apiKeys.some(k => k.provider === LLMProvider.GEMINI && k.isActive),
-        groq: apiKeys.some(k => k.provider === LLMProvider.GROQ && k.isActive),
+        mistral: apiKeys.some(k => k.provider === LLMProvider.MISTRAL && k.isActive),
         openai: apiKeys.some(k => k.provider === LLMProvider.OPENAI && k.isActive),
       },
     };

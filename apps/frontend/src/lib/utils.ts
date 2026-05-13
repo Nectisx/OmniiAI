@@ -34,7 +34,7 @@ export function formatRelativeTime(dateStr: string): string {
 export function getModelDisplayName(model: string): string {
   const names: Record<string, string> = {
     [LLMModel.GEMINI_2_FLASH]: 'Gemini 2.0 Flash',
-    [LLMModel.LLAMA_3_3_70B]: 'Llama 3.3 70B',
+    [LLMModel.MISTRAL_SMALL]: 'Mistral Small',
     [LLMModel.GPT_4O]: 'GPT-4o',
   };
   return names[model] || model;
@@ -44,7 +44,7 @@ export function getModelDisplayName(model: string): string {
 export function getProviderColor(provider: LLMProvider | string): string {
   const colors: Record<string, string> = {
     [LLMProvider.GEMINI]: '#1a73e8',
-    [LLMProvider.GROQ]: '#7B4FD4',
+    [LLMProvider.MISTRAL]: '#ff7000',
     [LLMProvider.OPENAI]: '#10a37f',
   };
   return colors[provider] || '#00B4CC';
@@ -54,7 +54,7 @@ export function getProviderColor(provider: LLMProvider | string): string {
 export function getModelColor(model: string): string {
   const colors: Record<string, string> = {
     [LLMModel.GEMINI_2_FLASH]: '#1a73e8',
-    [LLMModel.LLAMA_3_3_70B]: '#7B4FD4',
+    [LLMModel.MISTRAL_SMALL]: '#ff7000',
     [LLMModel.GPT_4O]: '#10a37f',
   };
   return colors[model] || '#00B4CC';

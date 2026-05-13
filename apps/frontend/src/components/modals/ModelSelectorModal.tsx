@@ -27,11 +27,11 @@ const MODEL_STYLE: Record<LLMModel, {
     providerColor: '#1a73e8',
     badgeColor: 'bg-blue-500/15 text-blue-400',
   },
-  [LLMModel.LLAMA_3_3_70B]: {
-    icon: 'L',
-    provider: 'Groq',
-    providerColor: '#7B4FD4',
-    badgeColor: 'bg-violet-500/15 text-violet-400',
+  [LLMModel.MISTRAL_SMALL]: {
+    icon: 'M',
+    provider: 'Mistral AI',
+    providerColor: '#ff7000',
+    badgeColor: 'bg-orange-500/15 text-orange-400',
   },
   [LLMModel.GPT_4O]: {
     icon: 'G',
@@ -96,12 +96,12 @@ export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps)
               {models.map((model) => {
                 const style = MODEL_STYLE[model];
                 const badgeLabel = model === LLMModel.GEMINI_2_FLASH ? t('model.principal')
-                  : model === LLMModel.LLAMA_3_3_70B ? t('model.ultrafast')
+                  : model === LLMModel.MISTRAL_SMALL ? t('model.ultrafast')
                   : t('model.fallback');
                 const descKey = model === LLMModel.GEMINI_2_FLASH
                   ? '15 RPM · 1,500 RPD · 1M TPM · Multimodal'
-                  : model === LLMModel.LLAMA_3_3_70B
-                  ? '30 RPM · 1,000 RPD · Ultra-fast'
+                  : model === LLMModel.MISTRAL_SMALL
+                  ? '60 RPM · 1,000 RPD · Mistral AI'
                   : '10-15 RPM · 50 RPD';
                 const quota = quotas.find((q) => q.model === model);
                 const available = isModelAvailable(model);
