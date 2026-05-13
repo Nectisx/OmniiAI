@@ -28,6 +28,7 @@ services:
       npm run build
     startCommand: |
       cd apps/backend &&
+      node scripts/cleanup-old-enum.js &&
       npx prisma db push --skip-generate --accept-data-loss &&
       node dist/server.js
     healthCheckPath: /api/health

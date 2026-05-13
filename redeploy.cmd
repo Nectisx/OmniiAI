@@ -39,7 +39,7 @@ git add .
 
 echo.
 echo === Commit ===
-git commit -m "feat: Mistral replaces Groq + avatar modal + Gemini key validation"
+git commit -m "fix: cleanup script for old groq enum rows before db push"
 if errorlevel 1 (
   echo [ERREUR] Le commit a echoue
   pause

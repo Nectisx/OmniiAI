@@ -1,15 +1,9 @@
-Deploy marker v6 — Mistral à la place de Groq/Llama + avatar fonctionnel + meilleur Gemini
+Deploy marker v7 — Fix migration enum groq → mistral
 
-Changements :
-- Groq/Llama 3.3 70B remplacé par Mistral Small (mistral-small-latest)
-- Variable d'env GROQ_API_KEY → MISTRAL_API_KEY
-- Schema Prisma enum: groq → mistral
-- Tous les types/fichiers backend et frontend mis à jour
-- Couleurs Mistral: orange (#ff7000)
-- Dashboard et chart adaptés
-- Avatar : nouveau modal avec 12 emojis preset + URL personnalisée
-- Avatar affiché dans la Sidebar et la page Profil
-- Gemini: validation du format de clé en amont (doit commencer par AIza)
-- Meilleure détection d'erreurs Gemini (api_key_invalid, permission_denied, etc.)
-- packages/types: LLMProvider.GROQ → LLMProvider.MISTRAL, LLMModel.LLAMA_3_3_70B → LLMModel.MISTRAL_SMALL
-- groq-sdk retiré des deps (utilise OpenAI SDK avec baseURL Mistral)
+Problème : MySQL/TiDB refuse de migrer l'enum LLMProvider quand il y a déjà des lignes
+avec la valeur 'groq' (erreur "Data truncated for column 'provider'").
+
+Solution : nouveau script apps/backend/scripts/cleanup-old-enum.js qui supprime
+en SQL brut les lignes 'groq' restantes AVANT le `prisma db push`.
+
+Le startCommand passe maintenant par : cleanup → db push → start serveur.

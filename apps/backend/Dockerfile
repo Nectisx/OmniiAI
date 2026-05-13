@@ -47,6 +47,7 @@ RUN npm install --include=dev
 COPY --from=builder /app/packages/types/dist ./packages/types/dist
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+COPY --from=builder /app/apps/backend/scripts ./apps/backend/scripts
 COPY --from=builder /app/apps/backend/tsconfig.json ./apps/backend/tsconfig.json
 
 # Dossiers runtime
@@ -59,4 +60,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
   CMD curl -fsS http://localhost:3001/api/health || exit 1
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
+CMD ["sh", "-c", "node scripts/cleanup-old-enum.js && npx prisma db push --skip-generate --accept-data-loss && node dist/server.js"]
