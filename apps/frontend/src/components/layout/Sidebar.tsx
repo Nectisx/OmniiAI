@@ -203,8 +203,9 @@ export function Sidebar() {
               <button
                 onClick={logout}
                 className="hidden group-hover:block text-[var(--text3)] hover:text-[var(--danger)] text-[11px]"
+                title={t('auth.logout')}
               >
-                Exit
+                {t('auth.logout')}
               </button>
             </div>
           </div>

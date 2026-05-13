@@ -13,8 +13,10 @@ import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
 import { ModelSelectorModal } from '@/components/modals/ModelSelectorModal';
 import { getModelDisplayName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 export default function ChatPage() {
+  const t = useT();
   const {
     messages, isLoadingMessages, streaming,
     sessionTokens, sessionMessages, sendMessage,
@@ -85,7 +87,7 @@ export default function ChatPage() {
                 : 'text-[var(--text3)] bg-[var(--bg3)]',
             )}>
               <Zap size={11} />
-              <span>Fallback: {dynamicRouting ? 'ON' : 'OFF'}</span>
+              <span>{dynamicRouting ? t('chat.fallbackOn') : t('chat.fallbackOff')}</span>
             </div>
 
             {/* Warning if model unavailable */}
@@ -96,7 +98,7 @@ export default function ChatPage() {
                 animate={{ opacity: 1 }}
               >
                 <AlertTriangle size={11} />
-                Quota épuisé
+                {t('chat.quotaExhausted')}
               </motion.div>
             )}
           </div>
@@ -106,7 +108,7 @@ export default function ChatPage() {
               onClick={() => setInfoPanelOpen(!infoPanelOpen)}
               className="text-[12px] text-[var(--text3)] hover:text-[var(--text)] px-2 py-1 rounded-lg hover:bg-[var(--bg3)] transition-colors"
             >
-              {infoPanelOpen ? 'Masquer' : 'Session Info'}
+              {infoPanelOpen ? t('chat.hide') : t('chat.sessionInfo')}
             </button>
           </div>
         </div>
@@ -148,7 +150,7 @@ export default function ChatPage() {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <Zap size={11} />
-                      Fallback activé: {getModelDisplayName(streaming.previousModel)} → {getModelDisplayName(streaming.streamModel!)}
+                      {t('chat.fallbackActivated')}: {getModelDisplayName(streaming.previousModel)} → {getModelDisplayName(streaming.streamModel!)}
                     </motion.div>
                   )}
 
@@ -188,7 +190,7 @@ export default function ChatPage() {
               exit={{ opacity: 0, y: 6 }}
             >
               <ChevronDown size={14} />
-              Défiler vers le bas
+              {t('chat.scrollDown')}
             </motion.button>
           )}
         </AnimatePresence>
@@ -199,7 +201,7 @@ export default function ChatPage() {
             <ChatInput onSend={sendMessage} disabled={streaming.isStreaming} />
           </div>
           <p className="text-center text-[10px] text-[var(--text3)] pb-2">
-            OmniAI peut faire des erreurs. Vérifiez les informations importantes.
+            {t('chat.disclaimer')}
           </p>
         </div>
       </div>

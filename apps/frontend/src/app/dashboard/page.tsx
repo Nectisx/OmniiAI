@@ -10,6 +10,7 @@ import { TrendingUp, TrendingDown, MessageSquare, Cpu, Activity, RefreshCw } fro
 import { dashboardApi } from '@/services/api.service';
 import { cn, formatTokens, formatRelativeTime, getModelDisplayName } from '@/lib/utils';
 import { LLMProvider } from '@omniai/types';
+import { useT } from '@/lib/i18n';
 
 const PROVIDER_COLORS: Record<string, string> = {
   [LLMProvider.GEMINI]: '#1a73e8',
@@ -45,6 +46,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function DashboardPage() {
+  const t = useT();
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['dashboard'],
     queryFn: dashboardApi.getData,
@@ -73,7 +75,7 @@ export default function DashboardPage() {
 
   const kpiCards = [
     {
-      label: 'Total Requêtes',
+      label: t('dashboard.totalRequests'),
       value: kpis?.totalRequests?.toLocaleString() || '0',
       delta: kpis?.requestsDelta || 0,
       icon: Activity,
@@ -81,7 +83,7 @@ export default function DashboardPage() {
       bg: 'bg-cyan-500/10',
     },
     {
-      label: 'Tokens Used',
+      label: t('dashboard.tokensUsed'),
       value: formatTokens(kpis?.totalTokens || 0),
       delta: kpis?.tokensDelta || 0,
       icon: Cpu,
@@ -89,7 +91,7 @@ export default function DashboardPage() {
       bg: 'bg-violet-500/10',
     },
     {
-      label: 'Modèles actifs',
+      label: t('dashboard.activeModels'),
       value: (kpis?.activeModels || 3).toString(),
       delta: 0,
       icon: Cpu,
@@ -98,7 +100,7 @@ export default function DashboardPage() {
       subtitle: 'Gemini / Llama / GPT-4o',
     },
     {
-      label: 'Conversations',
+      label: t('dashboard.conversations'),
       value: (kpis?.totalConversations || 0).toString(),
       delta: kpis?.conversationsDelta || 0,
       icon: MessageSquare,
@@ -112,9 +114,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text)]">Usage Dashboard</h1>
+          <h1 className="text-xl font-semibold text-[var(--text)]">{t('dashboard.title')}</h1>
           <p className="text-[13px] text-[var(--text2)] mt-0.5">
-            Monitorer l'utilisation des modèles IA — 7 derniers jours
+            {t('dashboard.subtitle')}
           </p>
         </div>
         <button
@@ -123,7 +125,7 @@ export default function DashboardPage() {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] text-[var(--text2)] border border-[var(--border)] hover:border-[var(--border2)] hover:text-[var(--text)] transition-colors"
         >
           <RefreshCw size={13} className={cn(isFetching && 'animate-spin')} />
-          Actualiser
+          {t('dashboard.refresh')}
         </button>
       </div>
 
@@ -151,7 +153,7 @@ export default function DashboardPage() {
             ) : (
               <div className={cn('flex items-center gap-1 text-[11px]', kpi.delta >= 0 ? 'text-green-400' : 'text-red-400')}>
                 {kpi.delta >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                {kpi.delta >= 0 ? '+' : ''}{kpi.delta}% vs semaine dernière
+                {kpi.delta >= 0 ? '+' : ''}{kpi.delta}% {t('dashboard.vsLastWeek')}
               </div>
             )}
           </motion.div>
@@ -167,7 +169,7 @@ export default function DashboardPage() {
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[13px] font-semibold text-[var(--text)]">
-            Requêtes quotidiennes par modèle
+            {t('dashboard.dailyRequests')}
           </h2>
           <div className="flex items-center gap-4">
             {[
@@ -204,13 +206,13 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.36 }}
         >
-          <h2 className="text-[13px] font-semibold text-[var(--text)] mb-4">Quota Status</h2>
+          <h2 className="text-[13px] font-semibold text-[var(--text)] mb-4">{t('dashboard.quotaStatus')}</h2>
           <div className="space-y-4">
             {data?.quotaStatus?.map((quota: any) => {
               const rpdPct = Math.round((quota.rpdRestant / quota.rpdLimit) * 100);
               const rpmPct = Math.round((quota.rpmRestant / quota.rpmLimit) * 100);
               const color = rpdPct > 50 ? '#22c55e' : rpdPct > 20 ? '#f59e0b' : '#ef4444';
-              const statusLabel = quota.isActive ? 'Active' : 'Limitée';
+              const statusLabel = quota.isActive ? t('dashboard.active') : t('dashboard.limited');
 
               return (
                 <div key={quota.provider}>
@@ -252,7 +254,7 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.42 }}
         >
-          <h2 className="text-[13px] font-semibold text-[var(--text)] mb-4">Conversations récentes</h2>
+          <h2 className="text-[13px] font-semibold text-[var(--text)] mb-4">{t('dashboard.recentConv')}</h2>
           <div className="space-y-2">
             {data?.recentConversations?.map((conv: any) => (
               <div
@@ -281,7 +283,7 @@ export default function DashboardPage() {
             ))}
             {(!data?.recentConversations || data.recentConversations.length === 0) && (
               <p className="text-[13px] text-[var(--text3)] text-center py-6">
-                Aucune conversation récente
+                {t('dashboard.noConv')}
               </p>
             )}
           </div>

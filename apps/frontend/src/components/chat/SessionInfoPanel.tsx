@@ -6,6 +6,7 @@ import { useChatStore } from '@/stores/chat.store';
 import { useQuotas } from '@/hooks/useQuotas';
 import { cn, getModelDisplayName, formatTokens } from '@/lib/utils';
 import { LLMModel, LLMProvider } from '@omniai/types';
+import { useT } from '@/lib/i18n';
 
 interface SessionInfoPanelProps {
   sessionTokens: number;
@@ -19,6 +20,7 @@ const PROVIDER_COLORS: Record<LLMProvider, string> = {
 };
 
 export function SessionInfoPanel({ sessionTokens, sessionMessages }: SessionInfoPanelProps) {
+  const t = useT();
   const { selectedModel, dynamicRouting, setDynamicRouting } = useChatStore();
   const { quotas, getQuotaPercentage, getQuotaStatus, refetch } = useQuotas();
 
@@ -33,28 +35,28 @@ export function SessionInfoPanel({ sessionTokens, sessionMessages }: SessionInfo
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold text-[var(--text3)] uppercase tracking-wider">
-              Session Info
+              {t('chat.sessionInfo')}
             </span>
           </div>
           <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-3 space-y-2">
             <div className="flex justify-between items-center text-[12px]">
-              <span className="text-[var(--text3)]">Modèle actif</span>
+              <span className="text-[var(--text3)]">{t('chat.activeModel')}</span>
               <span className="text-[var(--cyan)] font-medium text-[11px] truncate max-w-[120px]">
                 {getModelDisplayName(selectedModel)}
               </span>
             </div>
             <div className="flex justify-between items-center text-[12px]">
-              <span className="text-[var(--text3)]">Tokens session</span>
+              <span className="text-[var(--text3)]">{t('chat.tokensSession')}</span>
               <span className="text-[var(--text)] font-medium">{formatTokens(sessionTokens)}</span>
             </div>
             <div className="flex justify-between items-center text-[12px]">
-              <span className="text-[var(--text3)]">Messages</span>
+              <span className="text-[var(--text3)]">{t('chat.messages')}</span>
               <span className="text-[var(--text)] font-medium">{sessionMessages}</span>
             </div>
 
             {/* Dynamic routing toggle */}
             <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
-              <span className="text-[12px] text-[var(--text2)]">Routage dynamique</span>
+              <span className="text-[12px] text-[var(--text2)]">{t('chat.dynamicRouting')}</span>
               <button
                 onClick={() => setDynamicRouting(!dynamicRouting)}
                 className={cn(
@@ -76,12 +78,12 @@ export function SessionInfoPanel({ sessionTokens, sessionMessages }: SessionInfo
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold text-[var(--text3)] uppercase tracking-wider">
-              Quotas API
+              {t('chat.quotas')}
             </span>
             <button
               onClick={() => refetch()}
               className="text-[var(--text3)] hover:text-[var(--text)] transition-colors"
-              title="Actualiser"
+              title={t('chat.refresh')}
             >
               <RefreshCw size={12} />
             </button>
@@ -122,6 +124,11 @@ export function SessionInfoPanel({ sessionTokens, sessionMessages }: SessionInfo
                       <span className="text-[12px] font-medium text-[var(--text)]">
                         {quota.model.split('-')[0].charAt(0).toUpperCase() + quota.model.split('-')[0].slice(1)}
                       </span>
+                      {(quota as any).source === 'personal' && (
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-violet-500/20 text-violet-300 font-semibold uppercase tracking-wider">
+                          {t('chat.usingPersonalKey')}
+                        </span>
+                      )}
                     </div>
                     <span
                       className={cn(
@@ -131,7 +138,7 @@ export function SessionInfoPanel({ sessionTokens, sessionMessages }: SessionInfo
                           : 'bg-[var(--bg4)] text-[var(--text3)] border border-[var(--border)]',
                       )}
                     >
-                      {isActive ? 'Actif' : 'Fallback'}
+                      {isActive ? t('chat.activeModel') : t('chat.fallback')}
                     </span>
                   </div>
 

@@ -6,8 +6,10 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 export default function LoginPage() {
+  const t = useT();
   const { login, isLoggingIn, loginError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,10 +19,10 @@ export default function LoginPage() {
   const validate = () => {
     const newErrors: typeof errors = {};
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Email invalide';
+      newErrors.email = t('auth.invalidEmail');
     }
     if (!password) {
-      newErrors.password = 'Mot de passe requis';
+      newErrors.password = t('auth.passwordRequired');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -60,12 +62,12 @@ export default function LoginPage() {
             O
           </div>
           <h1 className="text-2xl font-bold text-[var(--text)]">OmniAI</h1>
-          <p className="text-sm text-[var(--text2)] mt-1">Votre hub IA centralisé</p>
+          <p className="text-sm text-[var(--text2)] mt-1">{t('auth.tagline')}</p>
         </div>
 
         {/* Card */}
         <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-2xl p-6 shadow-2xl">
-          <h2 className="text-base font-semibold text-[var(--text)] mb-5">Se connecter</h2>
+          <h2 className="text-base font-semibold text-[var(--text)] mb-5">{t('auth.loginTitle')}</h2>
 
           {/* Global error */}
           {errorMessage && (
@@ -82,7 +84,7 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">
-                Email
+                {t('auth.email')}
               </label>
               <input
                 type="email"
@@ -104,7 +106,7 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">
-                Mot de passe
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <input
@@ -146,11 +148,11 @@ export default function LoginPage() {
               {isLoggingIn ? (
                 <>
                   <div className="w-4 h-4 border-2 border-[var(--text3)] border-t-transparent rounded-full animate-spin" />
-                  Connexion...
+                  {t('auth.signingIn')}
                 </>
               ) : (
                 <>
-                  Se connecter
+                  {t('auth.signIn')}
                   <ArrowRight size={15} />
                 </>
               )}
@@ -159,9 +161,9 @@ export default function LoginPage() {
 
           <div className="mt-5 pt-4 border-t border-[var(--border)] text-center">
             <p className="text-[12px] text-[var(--text3)]">
-              Pas encore de compte ?{' '}
+              {t('auth.noAccount')}{' '}
               <Link href="/auth/register" className="text-[var(--cyan)] hover:text-[var(--cyan2)] font-medium">
-                S'inscrire
+                {t('auth.toRegister')}
               </Link>
             </p>
           </div>

@@ -370,20 +370,40 @@ export class LLMService {
 
       } catch (error: unknown) {
         lastError = error as Error;
-        logger.warn(`Erreur ${modelId}:`, error);
+        const errMsg = (error as Error).message || '';
+        const errStatus = (error as any)?.status ?? (error as any)?.response?.status;
+        logger.warn(`Erreur ${modelId}: ${errMsg}`);
 
-        // Si erreur quota (429) et routage dynamique: essayer suivant
-        const isQuotaError = (error as NodeJS.ErrnoException)?.status === 429
-          || (error as Error).message?.includes('429')
-          || (error as Error).message?.includes('quota')
-          || (error as Error).message?.includes('rate limit');
+        // Erreur quota (429) → fallback
+        const isQuotaError = errStatus === 429
+          || errMsg.includes('429')
+          || errMsg.toLowerCase().includes('quota')
+          || errMsg.toLowerCase().includes('rate limit');
+
+        // Erreur clé invalide (401/403)
+        const isAuthError = errStatus === 401 || errStatus === 403
+          || errMsg.toLowerCase().includes('unauthorized')
+          || errMsg.toLowerCase().includes('invalid api key')
+          || errMsg.toLowerCase().includes('api key not valid')
+          || errMsg.toLowerCase().includes('forbidden');
 
         if (isQuotaError && dynamicRouting) {
-          // Marquer le quota comme épuisé
           await quotaService.markExhausted(config.provider);
           previousModel = previousModel || modelId;
           modelSwitched = true;
           continue;
+        }
+
+        // Clé invalide → message explicite (pas de fallback automatique,
+        // car si l'user utilise sa clé perso il veut savoir qu'elle est invalide)
+        if (isAuthError) {
+          const usingUserKey = !!userApiKeys?.[config.provider];
+          throw new AppError(
+            usingUserKey
+              ? `Votre clé API personnelle pour ${config.displayName} est invalide ou expirée. Vérifiez-la dans Paramètres > Clés API.`
+              : `La clé API serveur pour ${config.displayName} est invalide. Contactez l'administrateur ou utilisez votre propre clé.`,
+            401,
+          );
         }
 
         // Autre erreur: ne pas fallback

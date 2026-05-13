@@ -6,8 +6,10 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 export default function RegisterPage() {
+  const t = useT();
   const { register, isRegistering, registerError } = useAuth();
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
@@ -21,12 +23,12 @@ export default function RegisterPage() {
 
   const validate = () => {
     const e: typeof errors = {};
-    if (!prenom.trim()) e.prenom = 'Prénom requis';
-    if (!nom.trim()) e.nom = 'Nom requis';
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email invalide';
-    if (password.length < 8) e.password = '8 caractères minimum';
-    else if (!/[A-Z]/.test(password)) e.password = 'Une majuscule requise';
-    else if (!/[0-9]/.test(password)) e.password = 'Un chiffre requis';
+    if (!prenom.trim()) e.prenom = t('auth.firstNameRequired');
+    if (!nom.trim()) e.nom = t('auth.lastNameRequired');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = t('auth.invalidEmail');
+    if (password.length < 8) e.password = t('auth.passwordMin');
+    else if (!/[A-Z]/.test(password)) e.password = t('auth.passwordUpper');
+    else if (!/[0-9]/.test(password)) e.password = t('auth.passwordDigit');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -59,8 +61,8 @@ export default function RegisterPage() {
       <motion.div className="w-full max-w-[400px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl bg-gradient-omni flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg shadow-violet-500/20">O</div>
-          <h1 className="text-2xl font-bold text-[var(--text)]">Créer un compte</h1>
-          <p className="text-sm text-[var(--text2)] mt-1">Rejoignez OmniAI gratuitement</p>
+          <h1 className="text-2xl font-bold text-[var(--text)]">{t('auth.welcomeTitle')}</h1>
+          <p className="text-sm text-[var(--text2)] mt-1">{t('auth.welcomeSub')}</p>
         </div>
 
         <div className="bg-[var(--bg2)] border border-[var(--border)] rounded-2xl p-6 shadow-2xl">
@@ -74,7 +76,7 @@ export default function RegisterPage() {
             {/* Prénom + Nom */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Prénom</label>
+                <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.firstName')}</label>
                 <input
                   type="text"
                   value={prenom}
@@ -89,7 +91,7 @@ export default function RegisterPage() {
                 {errors.prenom && <p className="text-[11px] text-red-400 mt-1">{errors.prenom}</p>}
               </div>
               <div>
-                <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Nom</label>
+                <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.lastName')}</label>
                 <input
                   type="text"
                   value={nom}
@@ -107,7 +109,7 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Email</label>
+              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.email')}</label>
               <input
                 type="email"
                 value={email}
@@ -124,7 +126,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Mot de passe</label>
+              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.password')}</label>
               <div className="relative">
                 <input
                   type={showPwd ? 'text' : 'password'}
@@ -142,12 +144,12 @@ export default function RegisterPage() {
                 </button>
               </div>
               {errors.password && <p className="text-[11px] text-red-400 mt-1">{errors.password}</p>}
-              <p className="text-[10px] text-[var(--text3)] mt-1">8 caractères min, 1 majuscule, 1 chiffre</p>
+              <p className="text-[10px] text-[var(--text3)] mt-1">{t('auth.passwordHint')}</p>
             </div>
 
             {/* Entreprise */}
             <div>
-              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Entreprise (optionnel)</label>
+              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.company')} ({t('common.optional')})</label>
               <input
                 type="text"
                 value={company}
@@ -167,17 +169,17 @@ export default function RegisterPage() {
               )}
             >
               {isRegistering ? (
-                <><div className="w-4 h-4 border-2 border-[var(--text3)] border-t-transparent rounded-full animate-spin" />Inscription...</>
+                <><div className="w-4 h-4 border-2 border-[var(--text3)] border-t-transparent rounded-full animate-spin" />{t('auth.signingUp')}</>
               ) : (
-                <>Créer mon compte<ArrowRight size={15} /></>
+                <>{t('auth.signUp')}<ArrowRight size={15} /></>
               )}
             </button>
           </form>
 
           <div className="mt-5 pt-4 border-t border-[var(--border)] text-center">
             <p className="text-[12px] text-[var(--text3)]">
-              Déjà un compte ?{' '}
-              <Link href="/auth/login" className="text-[var(--cyan)] hover:text-[var(--cyan2)] font-medium">Se connecter</Link>
+              {t('auth.haveAccount')}{' '}
+              <Link href="/auth/login" className="text-[var(--cyan)] hover:text-[var(--cyan2)] font-medium">{t('auth.toLogin')}</Link>
             </p>
           </div>
         </div>

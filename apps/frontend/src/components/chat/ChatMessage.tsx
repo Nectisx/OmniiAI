@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { cn, getModelDisplayName, formatTokens } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 import type { Message } from '@omniai/types';
 
 interface ChatMessageProps {
@@ -11,6 +12,7 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message, isStreaming, streamContent }: ChatMessageProps) {
+  const t = useT();
   const isUser = message.role === 'user';
   const content = isStreaming ? streamContent || '' : message.contenu;
 
@@ -34,7 +36,7 @@ export function ChatMessage({ message, isStreaming, streamContent }: ChatMessage
       <div className={cn('max-w-[76%]', isUser && 'items-end flex flex-col')}>
         {/* Meta */}
         <div className={cn('flex items-center gap-1.5 mb-1 text-[11px] text-[var(--text3)]', isUser && 'flex-row-reverse')}>
-          <span>{isUser ? 'Vous' : (message.modeleUtilise ? getModelDisplayName(message.modeleUtilise) : 'Assistant')}</span>
+          <span>{isUser ? t('chat.you') : (message.modeleUtilise ? getModelDisplayName(message.modeleUtilise) : t('chat.assistant'))}</span>
           {!isUser && message.modeleUtilise && (
             <span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--bg4)] border border-[var(--border)] text-[var(--cyan)]">
               {message.tokensConsommes > 0 ? `${formatTokens(message.tokensConsommes)} tokens` : 'AI'}
@@ -124,6 +126,7 @@ function MessageContent({ content, isStreaming }: { content: string; isStreaming
 
 /** Typing indicator for when AI is generating */
 export function TypingIndicator({ model }: { model?: string }) {
+  const t = useT();
   return (
     <motion.div
       className="flex gap-3 mb-5"
@@ -135,7 +138,7 @@ export function TypingIndicator({ model }: { model?: string }) {
       </div>
       <div>
         <div className="text-[11px] text-[var(--text3)] mb-1">
-          {model ? getModelDisplayName(model) : 'Assistant'}
+          {model ? getModelDisplayName(model) : t('chat.assistant')}
         </div>
         <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl px-4 py-3">
           <div className="flex gap-1 items-center">

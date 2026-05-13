@@ -1,2 +1,11 @@
-Deploy marker v4 — fix focus register, auto-seed quotas, theme dark/light, i18n FR/EN
+Deploy marker v5 — i18n complet FR/EN, clés API perso améliorées
 Date: 2026-05-13
+
+Changements :
+- Toutes les pages traduites : Login, Register, Chat, Dashboard, Settings, Sidebar, Modal modèle, Session Info, Chat Message, Welcome Screen
+- Bouton de déconnexion traduit
+- Notification de fallback traduite
+- Badge "Clé perso" affiché dans le SessionInfoPanel et le ModelSelectorModal quand l'utilisateur utilise sa propre clé
+- Validation format de clé dans la page Settings (avertissement si préfixe inattendu)
+- Erreurs 401/403 (clé invalide) : message explicite à l'utilisateur (ne pas bypass via fallback)
+- Refetch des quotas après save/delete de clé pour MAJ instantanée de l'UI

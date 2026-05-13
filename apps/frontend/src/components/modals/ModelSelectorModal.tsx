@@ -7,47 +7,42 @@ import { LLMModel, LLMProvider } from '@omniai/types';
 import { useChatStore } from '@/stores/chat.store';
 import { useQuotas } from '@/hooks/useQuotas';
 import { cn, getModelDisplayName, formatTokens } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 interface ModelSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const MODEL_META: Record<LLMModel, {
+// Métadonnées modèles (les desc sont traduites dans le composant)
+const MODEL_STYLE: Record<LLMModel, {
   icon: string;
   provider: string;
   providerColor: string;
-  badge: string;
   badgeColor: string;
-  desc: string;
 }> = {
   [LLMModel.GEMINI_2_FLASH]: {
     icon: 'G',
     provider: 'Google AI Studio',
     providerColor: '#1a73e8',
-    badge: 'Principal',
     badgeColor: 'bg-blue-500/15 text-blue-400',
-    desc: '15 RPM · 1 500 RPD · 1M TPM. Multimodal (images, PDF). Offre gratuite.',
   },
   [LLMModel.LLAMA_3_3_70B]: {
     icon: 'L',
     provider: 'Groq',
     providerColor: '#7B4FD4',
-    badge: 'Ultra-rapide',
     badgeColor: 'bg-violet-500/15 text-violet-400',
-    desc: '30 RPM · 1 000 RPD. Ultra-rapide. Offre gratuite permanente.',
   },
   [LLMModel.GPT_4O]: {
     icon: 'G',
     provider: 'GitHub Models',
     providerColor: '#10a37f',
-    badge: 'Fallback',
     badgeColor: 'bg-green-500/15 text-green-400',
-    desc: '10-15 RPM · 50 RPD. Compte GitHub suffit. Offre gratuite.',
   },
 };
 
 export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps) {
+  const t = useT();
   const { selectedModel, setSelectedModel, dynamicRouting, setDynamicRouting } = useChatStore();
   const { quotas, getQuotaPercentage, getQuotaStatus, isModelAvailable } = useQuotas();
   const [pending, setPending] = useState<LLMModel>(selectedModel);
@@ -86,9 +81,9 @@ export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps)
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-base font-semibold text-[var(--text)]">Choisir votre modèle IA</h2>
+                <h2 className="text-base font-semibold text-[var(--text)]">{t('model.choose')}</h2>
                 <p className="text-xs text-[var(--text3)] mt-0.5">
-                  Sélectionnez le modèle pour cette conversation
+                  {t('model.chooseSub')}
                 </p>
               </div>
               <button onClick={onClose} className="text-[var(--text3)] hover:text-[var(--text)] transition-colors">
@@ -99,12 +94,21 @@ export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps)
             {/* Models */}
             <div className="space-y-2 mb-4">
               {models.map((model) => {
-                const meta = MODEL_META[model];
+                const style = MODEL_STYLE[model];
+                const badgeLabel = model === LLMModel.GEMINI_2_FLASH ? t('model.principal')
+                  : model === LLMModel.LLAMA_3_3_70B ? t('model.ultrafast')
+                  : t('model.fallback');
+                const descKey = model === LLMModel.GEMINI_2_FLASH
+                  ? '15 RPM · 1,500 RPD · 1M TPM · Multimodal'
+                  : model === LLMModel.LLAMA_3_3_70B
+                  ? '30 RPM · 1,000 RPD · Ultra-fast'
+                  : '10-15 RPM · 50 RPD';
                 const quota = quotas.find((q) => q.model === model);
                 const available = isModelAvailable(model);
                 const pct = quota ? getQuotaPercentage(quota) : 100;
                 const status = quota ? getQuotaStatus(quota) : 'ok';
                 const isSelected = pending === model;
+                const usingPersonal = (quota as any)?.source === 'personal';
 
                 const statusColor = {
                   ok: 'bg-green-500',
@@ -137,29 +141,34 @@ export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps)
                     <div className="flex items-center gap-2.5 mb-2">
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                        style={{ background: meta.providerColor }}
+                        style={{ background: style.providerColor }}
                       >
-                        {meta.icon}
+                        {style.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[13px] font-medium text-[var(--text)]">
                             {getModelDisplayName(model)}
                           </span>
-                          <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-semibold', meta.badgeColor)}>
-                            {meta.badge}
+                          <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-semibold', style.badgeColor)}>
+                            {badgeLabel}
                           </span>
+                          {usingPersonal && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-violet-500/15 text-violet-300">
+                              {t('chat.usingPersonalKey')}
+                            </span>
+                          )}
                           {!available && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-red-500/15 text-red-400">
-                              Quota épuisé
+                              {t('chat.quotaExhausted')}
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[var(--text3)]">{meta.provider}</div>
+                        <div className="text-[11px] text-[var(--text3)]">{style.provider}</div>
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-[var(--text2)] mb-2 leading-relaxed">{meta.desc}</p>
+                    <p className="text-[11px] text-[var(--text2)] mb-2 leading-relaxed">{descKey}</p>
 
                     {/* Quota bar */}
                     {quota && (
@@ -183,9 +192,9 @@ export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps)
             {/* Dynamic routing toggle */}
             <div className="flex items-center justify-between py-3 border-t border-[var(--border)]">
               <div>
-                <div className="text-[13px] text-[var(--text)]">Routage dynamique</div>
+                <div className="text-[13px] text-[var(--text)]">{t('chat.dynamicRouting')}</div>
                 <div className="text-[11px] text-[var(--text3)]">
-                  Bascule auto si quota dépassé (Gemini → Llama → GPT-4o)
+                  {t('model.dynamicRoutingDesc')}
                 </div>
               </div>
               <button
@@ -209,13 +218,13 @@ export function ModelSelectorModal({ isOpen, onClose }: ModelSelectorModalProps)
                 onClick={onClose}
                 className="flex-1 py-2 rounded-lg border border-[var(--border)] text-[var(--text2)] text-sm hover:border-[var(--border2)] hover:text-[var(--text)] transition-colors"
               >
-                Annuler
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirm}
                 className="flex-[2] py-2 rounded-lg bg-[var(--cyan)] text-[#0a1520] text-sm font-semibold hover:bg-[var(--cyan2)] transition-colors"
               >
-                Confirmer la sélection
+                {t('common.confirmSelection')}
               </button>
             </div>
           </motion.div>

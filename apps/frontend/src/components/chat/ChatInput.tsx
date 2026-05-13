@@ -7,6 +7,7 @@ import { useChatStore } from '@/stores/chat.store';
 import { uploadApi } from '@/services/api.service';
 import { cn, formatFileSize } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
+import { useT } from '@/lib/i18n';
 
 interface ChatInputProps {
   onSend: (content: string) => void;
@@ -14,6 +15,7 @@ interface ChatInputProps {
 }
 
 export function ChatInput({ onSend, disabled }: ChatInputProps) {
+  const t = useT();
   const [value, setValue] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [micActive, setMicActive] = useState(false);
@@ -162,7 +164,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             onChange={(e) => setValue(e.target.value)}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="Écrivez votre message... (Shift+Enter pour saut de ligne)"
+            placeholder={t('chat.placeholder')}
             disabled={disabled}
             rows={1}
             maxLength={50000}
@@ -226,7 +228,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
               )}
             >
               <Send size={13} />
-              Envoyer
+              {t('chat.send')}
             </button>
           </div>
         </div>

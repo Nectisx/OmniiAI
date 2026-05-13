@@ -9,15 +9,25 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useToast } from '@/hooks/useToast';
 import { LLMProvider, Language, Theme } from '@omniai/types';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
-const SECTIONS = ['Profil', 'Clés API', 'Apparence', 'Notifications'];
 const SECTION_ICONS = [User, Key, Palette, Bell];
+const SECTION_KEYS = ['profile', 'apiKeys', 'appearance', 'notifications'] as const;
+type SectionKey = typeof SECTION_KEYS[number];
 
 export default function SettingsPage() {
+  const t = useT();
   const queryClient = useQueryClient();
   const { user, setUser } = useAuthStore();
   const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState('Profil');
+  const [activeSection, setActiveSection] = useState<SectionKey>('profile');
+
+  const SECTION_LABELS: Record<SectionKey, string> = {
+    profile: t('settings.profile'),
+    apiKeys: t('settings.apiKeys'),
+    appearance: t('settings.appearance'),
+    notifications: t('settings.notifications'),
+  };
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
@@ -46,34 +56,36 @@ export default function SettingsPage() {
     mutationFn: settingsApi.updateProfile,
     onSuccess: (updatedUser) => {
       setUser(updatedUser);
-      toast({ title: 'Profil mis à jour avec succès', variant: 'success' });
+      toast({ title: t('settings.profileUpdated'), variant: 'success' });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
     },
-    onError: () => toast({ title: 'Erreur lors de la mise à jour', variant: 'destructive' }),
+    onError: () => toast({ title: t('common.error'), variant: 'destructive' }),
   });
 
   const upsertKeyMutation = useMutation({
     mutationFn: ({ provider, cle }: { provider: LLMProvider; cle: string }) =>
       settingsApi.upsertApiKey(provider, cle),
     onSuccess: (_, { provider }) => {
-      toast({ title: `Clé ${provider} sauvegardée`, variant: 'success' });
+      toast({ title: t('settings.keySaved'), variant: 'success' });
       setApiKeys(prev => ({ ...prev, [provider]: '' }));
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['quotas'] });
     },
-    onError: () => toast({ title: 'Erreur sauvegarde clé API', variant: 'destructive' }),
+    onError: () => toast({ title: t('common.error'), variant: 'destructive' }),
   });
 
   const deleteKeyMutation = useMutation({
     mutationFn: settingsApi.deleteApiKey,
-    onSuccess: (_, provider) => {
-      toast({ title: `Clé ${provider} supprimée` });
+    onSuccess: () => {
+      toast({ title: t('settings.keyDeleted') });
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['quotas'] });
     },
   });
 
   const updateNotifsMutation = useMutation({
     mutationFn: settingsApi.updateNotifications,
-    onSuccess: () => toast({ title: 'Notifications mises à jour', variant: 'success' }),
+    onSuccess: () => toast({ title: t('common.success'), variant: 'success' }),
   });
 
   if (isLoading) {
@@ -92,9 +104,9 @@ export default function SettingsPage() {
   };
 
   const API_KEY_CONFIGS = [
-    { provider: LLMProvider.GEMINI, label: 'Gemini (Google AI Studio)', placeholder: 'AIzaSy...', hasKey: settings?.apiKeys?.gemini },
-    { provider: LLMProvider.GROQ, label: 'Groq (Llama 3.3 70B)', placeholder: 'gsk_...', hasKey: settings?.apiKeys?.groq },
-    { provider: LLMProvider.OPENAI, label: 'OpenAI / GitHub Models (GPT-4o)', placeholder: 'sk-... ou ghp_...', hasKey: settings?.apiKeys?.openai },
+    { provider: LLMProvider.GEMINI, label: 'Gemini (Google AI Studio)', placeholder: 'AIzaSy...', hasKey: settings?.apiKeys?.gemini, prefix: 'AIzaSy' },
+    { provider: LLMProvider.GROQ, label: 'Groq (Llama 3.3 70B)', placeholder: 'gsk_...', hasKey: settings?.apiKeys?.groq, prefix: 'gsk_' },
+    { provider: LLMProvider.OPENAI, label: 'OpenAI / GitHub Models (GPT-4o)', placeholder: 'sk-... ou ghp_...', hasKey: settings?.apiKeys?.openai, prefix: '' },
   ];
 
   const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
@@ -115,25 +127,25 @@ export default function SettingsPage() {
       {/* Sidebar nav */}
       <div className="w-48 flex-shrink-0 border-r border-[var(--border)] p-3" style={{ background: 'var(--bg2)' }}>
         <div className="mb-4 px-2">
-          <h1 className="text-base font-semibold text-[var(--text)]">Paramètres</h1>
-          <p className="text-[11px] text-[var(--text3)] mt-0.5">Gérez votre compte</p>
+          <h1 className="text-base font-semibold text-[var(--text)]">{t('settings.title')}</h1>
+          <p className="text-[11px] text-[var(--text3)] mt-0.5">{t('settings.subtitle')}</p>
         </div>
         <nav className="space-y-0.5">
-          {SECTIONS.map((s, i) => {
+          {SECTION_KEYS.map((key, i) => {
             const Icon = SECTION_ICONS[i];
             return (
               <button
-                key={s}
-                onClick={() => setActiveSection(s)}
+                key={key}
+                onClick={() => setActiveSection(key)}
                 className={cn(
                   'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors text-left',
-                  activeSection === s
+                  activeSection === key
                     ? 'bg-[var(--bg4)] text-[var(--cyan)]'
                     : 'text-[var(--text2)] hover:bg-[var(--bg3)] hover:text-[var(--text)]',
                 )}
               >
                 <Icon size={14} />
-                {s}
+                {SECTION_LABELS[key]}
               </button>
             );
           })}
@@ -150,10 +162,10 @@ export default function SettingsPage() {
           className="max-w-xl"
         >
           {/* ── Profil ─────────────────────────────────────── */}
-          {activeSection === 'Profil' && (
+          {activeSection === 'profile' && (
             <div>
-              <h2 className="text-base font-semibold text-[var(--text)] mb-1">Profil</h2>
-              <p className="text-[13px] text-[var(--text2)] mb-5">Mettez à jour vos informations personnelles</p>
+              <h2 className="text-base font-semibold text-[var(--text)] mb-1">{t('settings.profile')}</h2>
+              <p className="text-[13px] text-[var(--text2)] mb-5">{t('settings.profileSub')}</p>
 
               {/* Avatar */}
               <div className="flex items-center gap-4 mb-6 p-4 bg-[var(--bg3)] border border-[var(--border)] rounded-xl">
@@ -163,13 +175,13 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-[14px] font-medium text-[var(--text)]">{user?.prenom} {user?.nom}</p>
                   <p className="text-[12px] text-[var(--text3)]">{user?.email}</p>
-                  <button className="text-[11px] text-[var(--cyan)] mt-1 hover:text-[var(--cyan2)]">Changer l'avatar</button>
+                  <button className="text-[11px] text-[var(--cyan)] mt-1 hover:text-[var(--cyan2)]">{t('settings.changeAvatar')}</button>
                 </div>
               </div>
 
               <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-5 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {([['Prénom', 'prenom', user?.prenom || ''], ['Nom', 'nom', user?.nom || '']] as const).map(([label, field]) => (
+                  {([[t('auth.firstName'), 'prenom', user?.prenom || ''], [t('auth.lastName'), 'nom', user?.nom || '']] as const).map(([label, field]) => (
                     <div key={field}>
                       <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{label}</label>
                       <input
@@ -181,7 +193,7 @@ export default function SettingsPage() {
                   ))}
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Email</label>
+                  <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.email')}</label>
                   <input
                     className="w-full bg-[var(--bg4)] border border-[var(--border)] rounded-xl px-3 py-2 text-[13px] text-[var(--text3)] outline-none cursor-not-allowed"
                     value={user?.email || ''}
@@ -189,7 +201,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Entreprise</label>
+                  <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{t('auth.company')}</label>
                   <input
                     className="w-full bg-[var(--bg4)] border border-[var(--border)] rounded-xl px-3 py-2 text-[13px] text-[var(--text)] outline-none focus:border-[var(--cyan)] transition-colors"
                     value={profile.company}
@@ -203,118 +215,137 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-[var(--cyan)] text-[#0a1520] rounded-xl text-[13px] font-semibold hover:bg-[var(--cyan2)] transition-colors"
                 >
                   <Save size={14} />
-                  {updateProfileMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+                  {updateProfileMutation.isPending ? t('common.loading') : t('common.save')}
                 </button>
               </div>
             </div>
           )}
 
           {/* ── Clés API ───────────────────────────────────── */}
-          {activeSection === 'Clés API' && (
+          {activeSection === 'apiKeys' && (
             <div>
-              <h2 className="text-base font-semibold text-[var(--text)] mb-1">Clés API personnelles</h2>
+              <h2 className="text-base font-semibold text-[var(--text)] mb-1">{t('settings.apiKeysTitle')}</h2>
               <p className="text-[13px] text-[var(--text2)] mb-2">
-                Vos clés ont la priorité sur les clés serveur. Laissez vide pour utiliser les clés partagées.
+                {t('settings.apiKeysSub')}
               </p>
               <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[12px] text-blue-300 mb-5">
-                💡 Les clés sont chiffrées avant stockage et ne sont jamais affichées en clair.
+                💡 {t('settings.apiKeysSecure')}
               </div>
 
               <div className="space-y-4">
-                {API_KEY_CONFIGS.map(({ provider, label, placeholder, hasKey }) => (
-                  <div key={provider} className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="text-[13px] font-medium text-[var(--text)]">{label}</label>
-                      {hasKey && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">
-                          ✓ Configurée
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type={showKeys[provider] ? 'text' : 'password'}
-                          value={apiKeys[provider]}
-                          onChange={e => setApiKeys(p => ({ ...p, [provider]: e.target.value }))}
-                          placeholder={hasKey ? '••••••••••••••••••••' : placeholder}
-                          className="w-full bg-[var(--bg4)] border border-[var(--border)] rounded-xl px-3 py-2 pr-9 text-[12px] text-[var(--text)] outline-none focus:border-[var(--cyan)] transition-colors font-mono"
-                        />
-                        <button
-                          onClick={() => setShowKeys(p => ({ ...p, [provider]: !p[provider] }))}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
-                        >
-                          {showKeys[provider] ? <EyeOff size={14} /> : <Eye size={14} />}
-                        </button>
+                {API_KEY_CONFIGS.map(({ provider, label, placeholder, hasKey, prefix }) => {
+                  const currentValue = apiKeys[provider] || '';
+                  const isValidFormat = !prefix || currentValue.startsWith(prefix);
+                  return (
+                    <div key={provider} className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-[13px] font-medium text-[var(--text)]">{label}</label>
+                        {hasKey && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">
+                            ✓ {t('settings.apiKeyConfigured')}
+                          </span>
+                        )}
                       </div>
-                      <button
-                        onClick={() => apiKeys[provider] && upsertKeyMutation.mutate({ provider, cle: apiKeys[provider] })}
-                        disabled={!apiKeys[provider] || upsertKeyMutation.isPending}
-                        className="px-3 py-2 rounded-xl bg-[var(--cyan)] text-[#0a1520] text-[12px] font-semibold hover:bg-[var(--cyan2)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Save size={14} />
-                      </button>
-                      {hasKey && (
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type={showKeys[provider] ? 'text' : 'password'}
+                            value={currentValue}
+                            onChange={e => setApiKeys(p => ({ ...p, [provider]: e.target.value }))}
+                            placeholder={hasKey ? '••••••••••••••••••••' : placeholder}
+                            className={cn(
+                              'w-full bg-[var(--bg4)] border rounded-xl px-3 py-2 pr-9 text-[12px] text-[var(--text)] outline-none transition-colors font-mono',
+                              currentValue && !isValidFormat
+                                ? 'border-yellow-500 focus:border-yellow-400'
+                                : 'border-[var(--border)] focus:border-[var(--cyan)]',
+                            )}
+                          />
+                          <button
+                            onClick={() => setShowKeys(p => ({ ...p, [provider]: !p[provider] }))}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]"
+                          >
+                            {showKeys[provider] ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                        </div>
                         <button
-                          onClick={() => deleteKeyMutation.mutate(provider)}
-                          className="px-3 py-2 rounded-xl border border-[var(--border)] text-[var(--danger)] text-[12px] hover:bg-red-500/10 transition-colors"
+                          onClick={() => currentValue && upsertKeyMutation.mutate({ provider, cle: currentValue })}
+                          disabled={!currentValue || upsertKeyMutation.isPending}
+                          title={t('common.save')}
+                          className="px-3 py-2 rounded-xl bg-[var(--cyan)] text-[#0a1520] text-[12px] font-semibold hover:bg-[var(--cyan2)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          <Trash2 size={14} />
+                          <Save size={14} />
                         </button>
+                        {hasKey && (
+                          <button
+                            onClick={() => deleteKeyMutation.mutate(provider)}
+                            title={t('common.delete')}
+                            className="px-3 py-2 rounded-xl border border-[var(--border)] text-[var(--danger)] text-[12px] hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                      {currentValue && !isValidFormat && (
+                        <p className="text-[11px] text-yellow-400 mt-1.5">
+                          ⚠️ {`Format inattendu. Attendu : ${prefix}...`}
+                        </p>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* ── Apparence ─────────────────────────────────── */}
-          {activeSection === 'Apparence' && (
+          {activeSection === 'appearance' && (
             <div>
-              <h2 className="text-base font-semibold text-[var(--text)] mb-1">Apparence & Langue</h2>
-              <p className="text-[13px] text-[var(--text2)] mb-5">Personnalisez l'interface OmniAI</p>
+              <h2 className="text-base font-semibold text-[var(--text)] mb-1">{t('settings.appearance')}</h2>
+              <p className="text-[13px] text-[var(--text2)] mb-5">{t('settings.appearanceSub')}</p>
 
               <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-5 space-y-5">
                 {/* Theme */}
                 <div>
-                  <label className="block text-[12px] font-semibold text-[var(--text2)] mb-3 uppercase tracking-wider">Thème</label>
+                  <label className="block text-[12px] font-semibold text-[var(--text2)] mb-3 uppercase tracking-wider">{t('settings.theme')}</label>
                   <div className="grid grid-cols-3 gap-2.5">
-                    {(['DARK', 'LIGHT', 'SYSTEM'] as const).map(t => (
-                      <button
-                        key={t}
-                        onClick={() => updateProfileMutation.mutate({ theme: t as Theme })}
-                        className={cn(
-                          'p-3 rounded-xl border text-[12px] transition-all text-center',
-                          user?.theme === t
-                            ? 'border-[var(--cyan)] bg-[rgba(0,180,204,0.07)] text-[var(--cyan)]'
-                            : 'border-[var(--border)] text-[var(--text2)] hover:border-[var(--border2)]',
-                        )}
-                      >
-                        <div className="text-2xl mb-1.5">{t === 'DARK' ? '🌙' : t === 'LIGHT' ? '☀️' : '💻'}</div>
-                        {t === 'DARK' ? 'Dark' : t === 'LIGHT' ? 'Light' : 'Système'}
-                      </button>
-                    ))}
+                    {(['DARK', 'LIGHT', 'SYSTEM'] as const).map(themeOpt => {
+                      const themeLabel = themeOpt === 'DARK' ? t('settings.dark') : themeOpt === 'LIGHT' ? t('settings.light') : t('settings.system');
+                      return (
+                        <button
+                          key={themeOpt}
+                          onClick={() => updateProfileMutation.mutate({ theme: themeOpt as Theme })}
+                          className={cn(
+                            'p-3 rounded-xl border text-[12px] transition-all text-center',
+                            user?.theme === themeOpt
+                              ? 'border-[var(--cyan)] bg-[rgba(0,180,204,0.07)] text-[var(--cyan)]'
+                              : 'border-[var(--border)] text-[var(--text2)] hover:border-[var(--border2)]',
+                          )}
+                        >
+                          <div className="text-2xl mb-1.5">{themeOpt === 'DARK' ? '🌙' : themeOpt === 'LIGHT' ? '☀️' : '💻'}</div>
+                          {themeLabel}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Language */}
                 <div>
-                  <label className="block text-[12px] font-semibold text-[var(--text2)] mb-3 uppercase tracking-wider">Langue</label>
+                  <label className="block text-[12px] font-semibold text-[var(--text2)] mb-3 uppercase tracking-wider">{t('settings.language')}</label>
                   <div className="grid grid-cols-2 gap-2.5">
-                    {(['FR', 'EN'] as const).map(l => (
+                    {(['FR', 'EN'] as const).map(langOpt => (
                       <button
-                        key={l}
-                        onClick={() => updateProfileMutation.mutate({ langue: l as Language })}
+                        key={langOpt}
+                        onClick={() => updateProfileMutation.mutate({ langue: langOpt as Language })}
                         className={cn(
                           'p-3 rounded-xl border text-[13px] transition-all flex items-center gap-2.5',
-                          user?.langue === l
+                          user?.langue === langOpt
                             ? 'border-[var(--cyan)] bg-[rgba(0,180,204,0.07)] text-[var(--cyan)]'
                             : 'border-[var(--border)] text-[var(--text2)] hover:border-[var(--border2)]',
                         )}
                       >
-                        <span className="text-xl">{l === 'FR' ? '🇫🇷' : '🇬🇧'}</span>
-                        {l === 'FR' ? 'Français' : 'English'}
+                        <span className="text-xl">{langOpt === 'FR' ? '🇫🇷' : '🇬🇧'}</span>
+                        {langOpt === 'FR' ? 'Français' : 'English'}
                       </button>
                     ))}
                   </div>
@@ -324,16 +355,16 @@ export default function SettingsPage() {
           )}
 
           {/* ── Notifications ─────────────────────────────── */}
-          {activeSection === 'Notifications' && (
+          {activeSection === 'notifications' && (
             <div>
-              <h2 className="text-base font-semibold text-[var(--text)] mb-1">Notifications</h2>
-              <p className="text-[13px] text-[var(--text2)] mb-5">Configurez vos alertes et rapports</p>
+              <h2 className="text-base font-semibold text-[var(--text)] mb-1">{t('settings.notifications')}</h2>
+              <p className="text-[13px] text-[var(--text2)] mb-5">{t('settings.notificationsSub')}</p>
 
               <div className="bg-[var(--bg3)] border border-[var(--border)] rounded-xl p-5 space-y-4">
                 {[
-                  { key: 'quotaAlerts', label: 'Alertes de quota (80%)', desc: 'Notification quand un modèle atteint 80% de son quota journalier' },
-                  { key: 'weeklyReport', label: 'Rapport hebdomadaire', desc: 'Résumé d\'utilisation envoyé chaque lundi matin' },
-                  { key: 'emailAlerts', label: 'Alertes par email', desc: 'Recevez les alertes importantes par email' },
+                  { key: 'quotaAlerts', label: t('settings.quotaAlerts'), desc: t('settings.quotaAlertsDesc') },
+                  { key: 'weeklyReport', label: t('settings.weeklyReport'), desc: t('settings.weeklyReportDesc') },
+                  { key: 'emailAlerts', label: t('settings.emailAlerts'), desc: t('settings.emailAlertsDesc') },
                 ].map(({ key, label, desc }) => (
                   <div key={key} className="flex items-center justify-between py-2 border-b border-[var(--border)] last:border-0">
                     <div>
