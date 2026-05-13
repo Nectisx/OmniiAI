@@ -1,9 +1,8 @@
-Deploy marker v7 — Fix migration enum groq → mistral
+Deploy marker v8 — Fix Gemini 2.0 systemInstruction format
 
-Problème : MySQL/TiDB refuse de migrer l'enum LLMProvider quand il y a déjà des lignes
-avec la valeur 'groq' (erreur "Data truncated for column 'provider'").
+Problème : Gemini API v1beta a changé le format de systemInstruction.
+Erreur reçue : "Invalid value at 'system_instruction' (type.googleapis.com/google.ai.generativelanguage.v1beta.Content)"
 
-Solution : nouveau script apps/backend/scripts/cleanup-old-enum.js qui supprime
-en SQL brut les lignes 'groq' restantes AVANT le `prisma db push`.
-
-Le startCommand passe maintenant par : cleanup → db push → start serveur.
+Solution : passer systemInstruction comme un objet Content
+{ role: 'system', parts: [{ text: '...' }] }
+au lieu d'une simple string.

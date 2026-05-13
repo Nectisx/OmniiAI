@@ -39,7 +39,7 @@ git add .
 
 echo.
 echo === Commit ===
-git commit -m "fix: cleanup script for old groq enum rows before db push"
+git commit -m "fix: Gemini 2.0 systemInstruction format (Content object)"
 if errorlevel 1 (
   echo [ERREUR] Le commit a echoue
   pause

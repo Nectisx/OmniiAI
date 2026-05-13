@@ -146,7 +146,10 @@ export class LLMService {
     const chat = model.startChat({
       history,
       generationConfig: { maxOutputTokens: 8192 },
-      systemInstruction: systemMsg?.content,
+      // Gemini 2.0 attend un objet Content pour systemInstruction
+      systemInstruction: systemMsg?.content
+        ? { role: 'system', parts: [{ text: systemMsg.content }] }
+        : undefined,
     });
 
     if (onChunk) {
