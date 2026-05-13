@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className="dark" suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning data-theme="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
       </head>

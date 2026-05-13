@@ -61,11 +61,35 @@ class QuotaService {
 
   /** Vérifie et décrémente les quotas serveur */
   private async checkServerQuota(provider: LLMProvider): Promise<boolean> {
-    const quota = await prisma.quotaServeur.findUnique({
+    let quota = await prisma.quotaServeur.findUnique({
       where: { provider },
     });
 
-    if (!quota) return false;
+    // Auto-création de la ligne quota si absente (1er run après db push)
+    if (!quota) {
+      const config = Object.values(MODEL_CONFIGS).find(c => c.provider === provider);
+      if (!config) return false;
+
+      try {
+        quota = await prisma.quotaServeur.create({
+          data: {
+            modele: config.id,
+            provider,
+            rpmRestant: config.rpmLimit,
+            rpdRestant: config.rpdLimit,
+            tpmRestant: config.tpmLimit,
+          },
+        });
+        logger.info(`✨ Quota serveur ${provider} créé automatiquement`);
+      } catch (e) {
+        // Race condition possible : un autre process l'a créé entre-temps
+        quota = await prisma.quotaServeur.findUnique({ where: { provider } });
+        if (!quota) {
+          logger.error(`Impossible de créer le quota serveur ${provider}:`, e);
+          return false;
+        }
+      }
+    }
 
     // Vérifier RPM (en mémoire)
     const rpmKey = `server:${provider}:rpm`;

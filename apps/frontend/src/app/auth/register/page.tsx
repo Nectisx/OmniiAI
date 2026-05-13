@@ -9,23 +9,24 @@ import { cn } from '@/lib/utils';
 
 export default function RegisterPage() {
   const { register, isRegistering, registerError } = useAuth();
-  const [form, setForm] = useState({ prenom: '', nom: '', email: '', password: '', company: '' });
+  const [prenom, setPrenom] = useState('');
+  const [nom, setNom] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [company, setCompany] = useState('');
   const [showPwd, setShowPwd] = useState(false);
-  const [errors, setErrors] = useState<Partial<typeof form>>({});
-
-  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-    setErrors(prev => ({ ...prev, [field]: undefined }));
-  };
+  const [errors, setErrors] = useState<{
+    prenom?: string; nom?: string; email?: string; password?: string;
+  }>({});
 
   const validate = () => {
-    const e: Partial<typeof form> = {};
-    if (!form.prenom.trim()) e.prenom = 'Prénom requis';
-    if (!form.nom.trim()) e.nom = 'Nom requis';
-    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Email invalide';
-    if (form.password.length < 8) e.password = '8 caractères minimum';
-    else if (!/[A-Z]/.test(form.password)) e.password = 'Une majuscule requise';
-    else if (!/[0-9]/.test(form.password)) e.password = 'Un chiffre requis';
+    const e: typeof errors = {};
+    if (!prenom.trim()) e.prenom = 'Prénom requis';
+    if (!nom.trim()) e.nom = 'Nom requis';
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email invalide';
+    if (password.length < 8) e.password = '8 caractères minimum';
+    else if (!/[A-Z]/.test(password)) e.password = 'Une majuscule requise';
+    else if (!/[0-9]/.test(password)) e.password = 'Un chiffre requis';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -34,36 +35,19 @@ export default function RegisterPage() {
     ev.preventDefault();
     if (!validate()) return;
     try {
-      await register({ prenom: form.prenom, nom: form.nom, email: form.email, password: form.password, company: form.company || undefined });
+      await register({
+        prenom,
+        nom,
+        email,
+        password,
+        company: company || undefined,
+      });
     } catch { /* géré par hook */ }
   };
 
-  const errorMsg = registerError ? ((registerError as any)?.response?.data?.error || 'Erreur lors de l\'inscription') : null;
-
-  const Field = ({ label, field, type = 'text', placeholder }: { label: string; field: keyof typeof form; type?: string; placeholder?: string }) => (
-    <div>
-      <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">{label}</label>
-      <div className="relative">
-        <input
-          type={field === 'password' ? (showPwd ? 'text' : 'password') : type}
-          value={form[field]}
-          onChange={set(field)}
-          placeholder={placeholder}
-          className={cn(
-            'w-full bg-[var(--bg3)] border rounded-xl px-3.5 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text3)] outline-none transition-colors',
-            field === 'password' && 'pr-10',
-            errors[field] ? 'border-red-500' : 'border-[var(--border)] focus:border-[var(--cyan)]',
-          )}
-        />
-        {field === 'password' && (
-          <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text3)]">
-            {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
-          </button>
-        )}
-      </div>
-      {errors[field] && <p className="text-[11px] text-red-400 mt-1">{errors[field]}</p>}
-    </div>
-  );
+  const errorMsg = registerError
+    ? ((registerError as any)?.response?.data?.error || "Erreur lors de l'inscription")
+    : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
@@ -87,13 +71,92 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* Prénom + Nom */}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Prénom" field="prenom" placeholder="Jean" />
-              <Field label="Nom" field="nom" placeholder="Dupont" />
+              <div>
+                <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Prénom</label>
+                <input
+                  type="text"
+                  value={prenom}
+                  onChange={(e) => { setPrenom(e.target.value); setErrors(p => ({ ...p, prenom: undefined })); }}
+                  placeholder="Jean"
+                  autoComplete="given-name"
+                  className={cn(
+                    'w-full bg-[var(--bg3)] border rounded-xl px-3.5 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text3)] outline-none transition-colors',
+                    errors.prenom ? 'border-red-500' : 'border-[var(--border)] focus:border-[var(--cyan)]',
+                  )}
+                />
+                {errors.prenom && <p className="text-[11px] text-red-400 mt-1">{errors.prenom}</p>}
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Nom</label>
+                <input
+                  type="text"
+                  value={nom}
+                  onChange={(e) => { setNom(e.target.value); setErrors(p => ({ ...p, nom: undefined })); }}
+                  placeholder="Dupont"
+                  autoComplete="family-name"
+                  className={cn(
+                    'w-full bg-[var(--bg3)] border rounded-xl px-3.5 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text3)] outline-none transition-colors',
+                    errors.nom ? 'border-red-500' : 'border-[var(--border)] focus:border-[var(--cyan)]',
+                  )}
+                />
+                {errors.nom && <p className="text-[11px] text-red-400 mt-1">{errors.nom}</p>}
+              </div>
             </div>
-            <Field label="Email" field="email" type="email" placeholder="jean@company.com" />
-            <Field label="Mot de passe" field="password" type="password" placeholder="••••••••" />
-            <Field label="Entreprise (optionnel)" field="company" placeholder="Acme Inc." />
+
+            {/* Email */}
+            <div>
+              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })); }}
+                placeholder="jean@company.com"
+                autoComplete="email"
+                className={cn(
+                  'w-full bg-[var(--bg3)] border rounded-xl px-3.5 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text3)] outline-none transition-colors',
+                  errors.email ? 'border-red-500' : 'border-[var(--border)] focus:border-[var(--cyan)]',
+                )}
+              />
+              {errors.email && <p className="text-[11px] text-red-400 mt-1">{errors.email}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Mot de passe</label>
+              <div className="relative">
+                <input
+                  type={showPwd ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })); }}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className={cn(
+                    'w-full bg-[var(--bg3)] border rounded-xl px-3.5 py-2.5 pr-10 text-[13px] text-[var(--text)] placeholder:text-[var(--text3)] outline-none transition-colors',
+                    errors.password ? 'border-red-500' : 'border-[var(--border)] focus:border-[var(--cyan)]',
+                  )}
+                />
+                <button type="button" onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text3)] hover:text-[var(--text)]">
+                  {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              {errors.password && <p className="text-[11px] text-red-400 mt-1">{errors.password}</p>}
+              <p className="text-[10px] text-[var(--text3)] mt-1">8 caractères min, 1 majuscule, 1 chiffre</p>
+            </div>
+
+            {/* Entreprise */}
+            <div>
+              <label className="block text-[12px] font-medium text-[var(--text2)] mb-1.5">Entreprise (optionnel)</label>
+              <input
+                type="text"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Acme Inc."
+                autoComplete="organization"
+                className="w-full bg-[var(--bg3)] border border-[var(--border)] focus:border-[var(--cyan)] rounded-xl px-3.5 py-2.5 text-[13px] text-[var(--text)] placeholder:text-[var(--text3)] outline-none transition-colors"
+              />
+            </div>
 
             <button
               type="submit"

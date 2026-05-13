@@ -1,3 +1,2 @@
-Deploy marker — fix Prisma binaryTargets + tsc relax
-Date: 2026-05-12
-Version: v3
+Deploy marker v4 — fix focus register, auto-seed quotas, theme dark/light, i18n FR/EN
+Date: 2026-05-13

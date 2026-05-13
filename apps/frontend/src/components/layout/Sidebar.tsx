@@ -14,12 +14,14 @@ import { useChatStore } from '@/stores/chat.store';
 import { useAuth } from '@/hooks/useAuth';
 import { conversationApi } from '@/services/api.service';
 import { useChat } from '@/hooks/useChat';
+import { useT } from '@/lib/i18n';
 import type { Conversation } from '@omniai/types';
 
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const t = useT();
   const {
     activeConversationId,
     setActiveConversation,
@@ -61,9 +63,9 @@ export function Sidebar() {
   };
 
   const navItems = [
-    { href: '/chat', icon: MessageSquare, label: 'Chat' },
-    { href: '/dashboard', icon: BarChart3, label: 'Dashboard' },
-    { href: '/settings', icon: Settings, label: 'Paramètres' },
+    { href: '/chat', icon: MessageSquare, label: t('nav.chat') },
+    { href: '/dashboard', icon: BarChart3, label: t('nav.dashboard') },
+    { href: '/settings', icon: Settings, label: t('nav.settings') },
   ];
 
   const initials = user
@@ -98,7 +100,7 @@ export function Sidebar() {
               className="w-full flex items-center gap-2 px-3 py-2 rounded-[var(--radius)] bg-[var(--cyan)] text-[#0a1520] font-semibold text-sm hover:bg-[var(--cyan2)] transition-colors"
             >
               <Plus size={15} />
-              Nouveau chat
+              {t('chat.newChat')}
             </button>
           </div>
 
@@ -123,7 +125,7 @@ export function Sidebar() {
 
           {/* Conversations */}
           <div className="px-3 pb-1 text-[11px] text-[var(--text3)] font-semibold uppercase tracking-wider">
-            Récent
+            {t('chat.recent')}
           </div>
           <div className="flex-1 overflow-y-auto px-2 pb-2">
             <AnimatePresence>
