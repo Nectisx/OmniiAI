@@ -29,6 +29,7 @@ export function useChat() {
     setStreamModelSwitch,
     stopStreaming,
     clearAttachedFiles,
+    setSelectedModel,
   } = useChatStore();
 
   const [sessionTokens, setSessionTokens] = useState(0);
@@ -106,6 +107,8 @@ export function useChat() {
         onModelSwitch: (model, _provider) => {
           const prev = useChatStore.getState().streaming.streamModel || selectedModel;
           setStreamModelSwitch(model as LLMModel, prev);
+          // Bascule réelle du modèle sélectionné pour que l'UI reflète le fallback
+          setSelectedModel(model as LLMModel);
         },
 
         onConversationCreated: (id, titre) => {
@@ -124,6 +127,10 @@ export function useChat() {
 
         onDone: (meta) => {
           finalMeta = meta;
+          // Synchronise le sélecteur sur le modèle réellement utilisé
+          if (meta.model && meta.model !== selectedModel) {
+            setSelectedModel(meta.model as LLMModel);
+          }
         },
 
         onError: (error) => {
@@ -169,6 +176,7 @@ export function useChat() {
     addMessage, addConversation, setActiveConversation,
     startStreaming, appendStreamChunk, setStreamModelSwitch,
     stopStreaming, clearAttachedFiles, queryClient,
+    setSelectedModel,
   ]);
 
   // ── Supprimer une conversation ────────────────────────────

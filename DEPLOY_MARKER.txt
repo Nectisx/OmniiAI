@@ -1,8 +1,14 @@
-Deploy marker v8 — Fix Gemini 2.0 systemInstruction format
+Deploy marker v9 — Fix UI : sélecteur de modèle ne se synchronise pas avec le fallback
 
-Problème : Gemini API v1beta a changé le format de systemInstruction.
-Erreur reçue : "Invalid value at 'system_instruction' (type.googleapis.com/google.ai.generativelanguage.v1beta.Content)"
+Problème : Quand le fallback automatique se déclenche (Gemini → Mistral → GPT-4o),
+le backend bascule bien de modèle et Mistral répond, mais l'UI du frontend continue
+d'afficher "Gemini 2.0 Flash" dans le sélecteur en haut à gauche et "Modèle actif :
+Gemini" dans le panneau Session Info.
 
-Solution : passer systemInstruction comme un objet Content
-{ role: 'system', parts: [{ text: '...' }] }
-au lieu d'une simple string.
+Cause : seul `streaming.streamModel` était mis à jour, pas `selectedModel` du chatStore
+qui est utilisé par le sélecteur top-bar et le panel SessionInfo.
+
+Fix dans useChat.ts :
+- onModelSwitch callback appelle maintenant setSelectedModel(model)
+- onDone callback synchronise selectedModel avec meta.model si différent
+- L'UI reflète instantanément le modèle réellement utilisé après fallback

@@ -39,7 +39,7 @@ git add .
 
 echo.
 echo === Commit ===
-git commit -m "fix: Gemini 2.0 systemInstruction format (Content object)"
+git commit -m "fix: sync selectedModel with fallback for UI consistency"
 if errorlevel 1 (
   echo [ERREUR] Le commit a echoue
   pause
