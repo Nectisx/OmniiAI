@@ -87,29 +87,101 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
     }
   };
 
-  const handleMicClick = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      toast({ title: 'Dictée vocale non supportée par ce navigateur', variant: 'destructive' });
+  const recognitionRef = useRef<any>(null);
+
+  const handleMicClick = async () => {
+    // Si déjà actif → on stoppe
+    if (micActive && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setMicActive(false);
       return;
     }
 
+    // Vérif support navigateur
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast({
+        title: 'Dictée vocale non supportée',
+        description: 'Utilisez Chrome, Edge ou Safari récent',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Vérif HTTPS (Web Speech API exige un contexte sécurisé)
+    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      toast({
+        title: 'HTTPS requis',
+        description: 'La dictée vocale nécessite une connexion sécurisée (HTTPS).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Demander explicitement la permission micro
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      toast({
+        title: 'Microphone refusé',
+        description: 'Autorisez l\'accès au micro dans les paramètres du navigateur.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.lang = 'fr-FR';
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
 
-    setMicActive(true);
+    let finalTranscript = '';
 
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript;
-      setValue(prev => prev + (prev ? ' ' : '') + transcript);
+    recognition.onstart = () => {
+      setMicActive(true);
+      toast({ title: '🎤 Écoute en cours...', description: 'Parlez maintenant. Cliquez à nouveau pour stopper.' });
     };
 
-    recognition.onend = () => setMicActive(false);
-    recognition.onerror = () => {
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interim += transcript;
+        }
+      }
+      setValue((prev) => {
+        // Garde le texte tapé avant + ajoute la transcription
+        const base = prev.replace(/\s*<<interim>>.*$/, '').trim();
+        const result = finalTranscript ? (base ? base + ' ' : '') + finalTranscript.trim() : base;
+        return interim ? `${result}${result ? ' ' : ''}${interim}` : result;
+      });
+    };
+
+    recognition.onend = () => {
       setMicActive(false);
-      toast({ title: 'Erreur de reconnaissance vocale', variant: 'destructive' });
+      recognitionRef.current = null;
+      // Cleanup final : retire les marqueurs interim s'il en reste
+      setValue((prev) => prev.replace(/\s*<<interim>>.*$/, '').trim());
+    };
+
+    recognition.onerror = (event: any) => {
+      setMicActive(false);
+      recognitionRef.current = null;
+      const errorMessages: Record<string, string> = {
+        'not-allowed': 'Permission micro refusée',
+        'no-speech': 'Aucune parole détectée',
+        'audio-capture': 'Pas de micro détecté',
+        'network': 'Erreur réseau',
+      };
+      toast({
+        title: errorMessages[event.error] || 'Erreur de reconnaissance vocale',
+        description: event.error,
+        variant: 'destructive',
+      });
     };
 
     recognition.start();
@@ -202,14 +274,17 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
             <button
               onClick={handleMicClick}
               className={cn(
-                'p-1.5 rounded-lg transition-colors',
+                'relative p-1.5 rounded-lg transition-colors',
                 micActive
-                  ? 'text-red-400 bg-red-500/10'
+                  ? 'text-red-400 bg-red-500/15 animate-pulse'
                   : 'text-[var(--text3)] hover:bg-[var(--bg4)] hover:text-[var(--text)]',
               )}
-              title="Dictée vocale"
+              title={micActive ? 'Stopper la dictée' : 'Démarrer la dictée vocale'}
             >
               {micActive ? <MicOff size={15} /> : <Mic size={15} />}
+              {micActive && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+              )}
             </button>
           </div>
 

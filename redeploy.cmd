@@ -39,7 +39,7 @@ git add .
 
 echo.
 echo === Commit ===
-git commit -m "fix: sync selectedModel with fallback for UI consistency"
+git commit -m "feat: native PDF/DOCX extraction + better mic + README update"
 if errorlevel 1 (
   echo [ERREUR] Le commit a echoue
   pause

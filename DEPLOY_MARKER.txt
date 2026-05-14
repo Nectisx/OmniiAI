@@ -1,14 +1,30 @@
-Deploy marker v9 — Fix UI : sélecteur de modèle ne se synchronise pas avec le fallback
+Deploy marker v10 — Extraction PDF/DOCX Node + Micro amélioré + README v2
 
-Problème : Quand le fallback automatique se déclenche (Gemini → Mistral → GPT-4o),
-le backend bascule bien de modèle et Mistral répond, mais l'UI du frontend continue
-d'afficher "Gemini 2.0 Flash" dans le sélecteur en haut à gauche et "Modèle actif :
-Gemini" dans le panneau Session Info.
+Changements :
 
-Cause : seul `streaming.streamModel` était mis à jour, pas `selectedModel` du chatStore
-qui est utilisé par le sélecteur top-bar et le panel SessionInfo.
+1. Backend — Extraction PDF/DOCX en Node natif
+   - Ajout de pdf-parse et mammoth aux dépendances
+   - uploadController réécrit : extraction native côté Node (plus de dépendance au service Python pour les formats standards)
+   - PDF: pdf-parse → extraction du texte
+   - DOCX: mammoth → extraction du texte
+   - TXT: lecture directe utf-8
+   - Fallback service Python uniquement pour les formats exotiques
 
-Fix dans useChat.ts :
-- onModelSwitch callback appelle maintenant setSelectedModel(model)
-- onDone callback synchronise selectedModel avec meta.model si différent
-- L'UI reflète instantanément le modèle réellement utilisé après fallback
+2. Frontend — Micro Speech-to-Text amélioré
+   - Détection navigateur (SpeechRecognition / webkitSpeechRecognition)
+   - Détection HTTPS requis (refuse en HTTP sauf localhost)
+   - Demande explicite de permission micro via getUserMedia avant de lancer
+   - Mode continuous : transcription en temps réel pendant qu'on parle
+   - Toast "Écoute en cours..." quand actif
+   - Bouton avec animation pulsante quand actif
+   - Petit point rouge ping en haut à droite du bouton
+   - Messages d'erreur localisés par type d'erreur (not-allowed, no-speech, audio-capture, network)
+   - Clic à nouveau pour stopper la dictée
+
+3. README mis à jour
+   - Reflète Mistral à la place de Groq/Llama
+   - Détaille toutes les améliorations apportées (backend, frontend, devops)
+   - Architecture mise à jour
+   - Section "Améliorations majeures" avec tous les fixes
+   - Configuration des clés API à jour (Mistral La Plateforme)
+   - Documentation API complète

@@ -105,54 +105,82 @@ export const upload = multer({
   },
 });
 
+// Extracteurs Node natifs — pas besoin de service Python
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const pdfParse = require('pdf-parse');
+  const data = await pdfParse(buffer);
+  return data.text || '';
+}
+
+async function extractDocxText(buffer: Buffer): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const mammoth = require('mammoth');
+  const result = await mammoth.extractRawText({ buffer });
+  return result.value || '';
+}
+
 export const uploadController = {
 
-  /** POST /api/upload — Upload et extraction de texte */
+  /** POST /api/upload — Upload et extraction de texte (RG16) */
   uploadFile: asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
       res.status(400).json({ success: false, error: 'Aucun fichier reçu' });
       return;
     }
 
-    const { mimetype, originalname, filename, size } = req.file;
+    const { mimetype, originalname, filename, size, path: filePath } = req.file;
     const isImage = mimetype.startsWith('image/');
 
     let extractedText: string | undefined;
     let base64: string | undefined;
 
-    if (isImage) {
-      // Lire l'image en base64 pour envoi direct à Gemini
-      const fileBuffer = fs.readFileSync(req.file.path);
-      base64 = fileBuffer.toString('base64');
-    } else {
-      // Extraction texte via microservice Python (RG16)
-      try {
-        const FormDataNode = require('form-data');
-        const formData = new FormDataNode();
-        formData.append('file', fs.createReadStream(req.file.path), {
-          filename: originalname,
-          contentType: mimetype,
-        });
-
-        const pythonUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:5000';
-        const response = await axios.post(`${pythonUrl}/extract`, formData, {
-          headers: {
-            ...formData.getHeaders(),
-            'X-Service-Secret': process.env.PYTHON_SERVICE_SECRET || '',
-          },
-          timeout: 30_000,
-        });
-
-        extractedText = response.data.text?.slice(0, 50_000); // RG16: 50k chars max
-
-      } catch (error) {
-        // Si le microservice Python est indisponible: extraction basique pour TXT
-        if (mimetype === 'text/plain') {
-          extractedText = fs.readFileSync(req.file.path, 'utf-8').slice(0, 50_000);
-        } else {
-          extractedText = `[Fichier ${originalname} joint — extraction de texte indisponible]`;
+    try {
+      if (isImage) {
+        // Lire l'image en base64 pour envoi direct à Gemini
+        const fileBuffer = fs.readFileSync(filePath);
+        base64 = fileBuffer.toString('base64');
+      } else if (mimetype === 'application/pdf' || originalname.toLowerCase().endsWith('.pdf')) {
+        // Extraction PDF avec pdf-parse (Node natif)
+        const buffer = fs.readFileSync(filePath);
+        const text = await extractPdfText(buffer);
+        extractedText = text.slice(0, 50_000); // RG16
+      } else if (
+        mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        || originalname.toLowerCase().endsWith('.docx')
+      ) {
+        // Extraction DOCX avec mammoth (Node natif)
+        const buffer = fs.readFileSync(filePath);
+        const text = await extractDocxText(buffer);
+        extractedText = text.slice(0, 50_000);
+      } else if (mimetype === 'text/plain' || originalname.toLowerCase().endsWith('.txt')) {
+        // Extraction TXT simple
+        extractedText = fs.readFileSync(filePath, 'utf-8').slice(0, 50_000);
+      } else {
+        // Type non supporté en extraction native — tenter le service Python en dernier recours
+        try {
+          const FormDataNode = require('form-data');
+          const formData = new FormDataNode();
+          formData.append('file', fs.createReadStream(filePath), {
+            filename: originalname,
+            contentType: mimetype,
+          });
+          const pythonUrl = process.env.PYTHON_SERVICE_URL || 'http://localhost:5000';
+          const response = await axios.post(`${pythonUrl}/extract`, formData, {
+            headers: {
+              ...formData.getHeaders(),
+              'X-Service-Secret': process.env.PYTHON_SERVICE_SECRET || '',
+            },
+            timeout: 30_000,
+          });
+          extractedText = response.data.text?.slice(0, 50_000);
+        } catch {
+          extractedText = `[Fichier ${originalname} — format non supporté]`;
         }
       }
+    } catch (error: any) {
+      console.error('Erreur extraction fichier:', error?.message || error);
+      extractedText = `[Fichier ${originalname} — erreur d'extraction : ${error?.message || 'inconnue'}]`;
     }
 
     res.json({
