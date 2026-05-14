@@ -327,17 +327,7 @@ node dist/server.js                # démarrage serveur
 
 ---
 
-## Équipe & Crédits
-
-| Membre | Rôle |
-|--------|------|
-| AMOUSSOU Solène | Cheffe de projet & Back-end |
-| SOW Alimatou | Designer UI/UX & Front-end |
-| SALOBO Kevin | Responsable gestion de projet |
-| FULCRAND Johan | Architecte logiciel & UI/UX |
-
-**Encadrants** : M. Mohamed-Amine LASHEB & M. Meihdi DJEBLI
-**Institution** : CNAM — Module USAL59 — 2025-2026
+BY JOHAN
 
 ---
 
